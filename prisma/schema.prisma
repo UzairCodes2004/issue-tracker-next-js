@@ -5,7 +5,7 @@
 
 // npx prisma migrate dev --name describe_your_change
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
   output   = "../app/generated/prisma"
 }
 
@@ -22,8 +22,17 @@ model Issue {
   updatedAT   DateTime @updatedAt
 }
 
+
 enum Status {
   OPEN
   IN_PROGRESS
   CLOSED
+}
+
+// User Model 
+model User {
+  id Int @id @default(autoincrement())
+  name String 
+  email String @unique
+  password String 
 }
