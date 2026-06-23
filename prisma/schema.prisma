@@ -15,8 +15,8 @@ datasource db {
 
 model Issue {
   id          Int      @id @default(autoincrement())
-  title       String   @db.VarChar(255) // updated so that title can contain upto 255 letters
-  description String   @db.Text // setted it to text as the descriptions could be very long 
+  title       String   @db.VarChar(255) 
+  description String   @db.Text 
   status      Status   @default(OPEN)
   createdAT   DateTime @default(now())
   updatedAT   DateTime @updatedAt
@@ -30,7 +30,7 @@ enum Status {
 }
 
 // User Model 
-model User {
+model Users {
   id Int @id @default(autoincrement())
   name String @db.VarChar(255)
   email String @unique
