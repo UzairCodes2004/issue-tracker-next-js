@@ -1,7 +1,10 @@
+'use client'
 import React from 'react'
+import { usePathname } from 'next/navigation';
 import Link from 'next/link'
 import { FaBug } from "react-icons/fa";
 const NavBar = () => {
+    const currentpath = usePathname()
     return (
         <nav className='flex space-x-6'>
 

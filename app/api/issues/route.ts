@@ -21,6 +21,8 @@ description:body.description
     });
     return NextResponse.json(newIssue,{status:201})
 }
+// Get All The Issues 
 export async function GET(){
-
-}
+const users = await prisma.issue.findMany({})
+return NextResponse.json(users)
+};
