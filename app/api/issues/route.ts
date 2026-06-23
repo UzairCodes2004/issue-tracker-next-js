@@ -21,3 +21,6 @@ description:body.description
     });
     return NextResponse.json(newIssue,{status:201})
 }
+export async function GET(){
+
+}
