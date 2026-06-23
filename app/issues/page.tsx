@@ -25,14 +25,13 @@ const Issues = () => {
         </Button>
       </div>
 
-      {/* Issues List */}
       <ul className="divide-y divide-slate-100">
         {list.map((i) => (
           <li
             key={i.id}
             className="flex justify-between items-center py-3.5 px-2 hover:bg-slate-50 rounded-lg transition-colors duration-150"
           >
-            <div className="flex flex-col gap-1 max-w-[70%]">
+            <Link href={`/issues/${i.id}`} className="flex flex-col gap-1 max-w-[70%] group">
               {/* Clean, prominent title */}
               <span className="font-semibold text-slate-900 line-clamp-1 group-hover:text-indigo-600 transition-colors duration-150 cursor-pointer">
                 {i.title}
@@ -42,7 +41,7 @@ const Issues = () => {
               <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
                 {i.description}
               </p>
-            </div>
+            </Link>
             {/* Dynamic Status Badge */}
             <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${i.status === 'OPEN' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                 i.status === 'IN_PROGRESS' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
@@ -53,6 +52,7 @@ const Issues = () => {
           </li>
         ))}
       </ul>
+
     </div>
   );
 };
