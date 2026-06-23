@@ -1,0 +1,29 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+// npx prisma migrate dev --name describe_your_change
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Issue {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255) // updated so that title can contain upto 255 letters
+  description String   @db.Text // setted it to text as the descriptions could be very long 
+  status      Status   @default(OPEN)
+  createdAT   DateTime @default(now())
+  updatedAT   DateTime @updatedAt
+}
+
+enum Status {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
