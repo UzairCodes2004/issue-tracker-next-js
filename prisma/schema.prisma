@@ -20,6 +20,8 @@ model Issue {
   status      Status   @default(OPEN)
   createdAT   DateTime @default(now())
   updatedAT   DateTime @updatedAt
+  assignedToUserId Int?
+  assignedToUser Users? @relation(fields: [assignedToUserId], references: [id])
 }
 
 
@@ -35,4 +37,5 @@ model Users {
   name String @db.VarChar(255)
   email String @unique
   password String @db.VarChar(255)
+  assignedIssues Issue[]
 }
