@@ -20,7 +20,7 @@ export default function UserProfilePage({
   const { id } = use(params);
   const router = useRouter();
 
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -38,7 +38,7 @@ export default function UserProfilePage({
     try {
       setDeleting(true);
       await axios.delete(`/api/user/${id}`);
-      // Sign out and redirect to home after account deletion
+      
       await signOut({ callbackUrl: '/' });
     } catch (err) {
       setDeleting(false);
@@ -63,7 +63,7 @@ export default function UserProfilePage({
     <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
       <h1 className="text-xl font-bold text-slate-800 mb-6">My Profile</h1>
 
-      {/* Profile details */}
+      
       <div className="flex flex-col gap-3 mb-6">
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-slate-400 w-16">Name</span>
@@ -75,11 +75,11 @@ export default function UserProfilePage({
         </div>
       </div>
 
-      {/* Error banner */}
+      
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-      {/* Action buttons */}
-      <div className="flex gap-3">
+      
+            <div className="flex gap-3">
         <Button
           asChild
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm"

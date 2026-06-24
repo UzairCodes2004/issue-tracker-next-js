@@ -30,7 +30,7 @@ export async function GET(request: NextRequest, { params }: Props) {
     return NextResponse.json(userData);
 }
 
-// PUT — hash password before saving
+
 export async function PUT(request: NextRequest, { params }: Props) {
     try {
         const { id } = await params;

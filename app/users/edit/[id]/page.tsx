@@ -5,9 +5,12 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
+import { useSession } from "next-auth/react";
 
 
 interface EditUserForm {
+  name: string;
+  email: string;
   newPassword: string;
   confirmPassword: string;
 }
@@ -27,12 +30,11 @@ export default function EditUserPage({
   const router = useRouter();
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<EditUserForm>();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile>();
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  // Fetch current user info (name, email) to display
+  const { data: session, update } = useSession()
   useEffect(() => {
     axios
       .get<UserProfile>(`/api/user/${id}`)
@@ -47,18 +49,20 @@ export default function EditUserPage({
       setIsSubmitting(true);
       setError('');
 
-      // Hash password client-side is NOT recommended — we send plain text and let the server hash it
-      // The existing PUT endpoint stores password directly, so we send the new password as-is
       await axios.put(`/api/user/${id}`, {
-        name: user.name,
-        email: user.email,
+        name: data.name,
+        email: data.email,
         password: data.newPassword,
       });
-
+      await update({
+        name: data.name,
+        email: data.email,
+        password: data.newPassword
+      });
       router.push(`/users/${id}`);
     } catch (err) {
       setIsSubmitting(false);
-      setError('Failed to update password. Please try again.');
+      setError('Failed to update profile. Please try again.');
     }
   };
 
@@ -72,43 +76,46 @@ export default function EditUserPage({
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
-      {/* Back link */}
       <Link href={`/users/${id}`} className="text-sm text-indigo-600 hover:underline mb-4 inline-block">
         ← Back to Profile
       </Link>
 
       <h1 className="text-xl font-bold text-slate-800 mb-6">Edit Profile</h1>
 
-      {/* Read-only profile info */}
-      <div className="flex flex-col gap-3 mb-6 bg-slate-50 rounded-lg p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-400 w-16">Name</span>
-          <span className="text-sm text-slate-700">{user.name}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-400 w-16">Email</span>
-          <span className="text-sm text-slate-700">{user.email}</span>
-        </div>
-      </div>
-
-      {error && (
-        <p className="text-red-500 text-sm mb-4">{error}</p>
-      )}
+      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <div>
+          <label className="text-xs font-semibold text-slate-500 block mb-1">Name</label>
+          <TextField.Root
+            placeholder="Enter name"
+            defaultValue={user.name}
+            {...register('name', { required: 'Name is required' })}
+          />
+          {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-slate-500 block mb-1">Email</label>
+          <TextField.Root
+            type="email"
+            placeholder="Enter email"
+            defaultValue={user.email}
+            {...register('email', { required: 'Email is required' })}
+          />
+          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+        </div>
+
         <div>
           <label className="text-xs font-semibold text-slate-500 block mb-1">New Password</label>
           <TextField.Root
             type="password"
             placeholder="Enter new password"
             {...register('newPassword', {
-              required: 'New password is required',
               minLength: { value: 6, message: 'Password must be at least 6 characters' },
             })}
           />
-          {errors.newPassword && (
-            <p className="text-red-500 text-xs mt-1">{errors.newPassword.message}</p>
-          )}
+          {errors.newPassword && <p className="text-red-500 text-xs mt-1">{errors.newPassword.message}</p>}
         </div>
 
         <div>
@@ -117,19 +124,16 @@ export default function EditUserPage({
             type="password"
             placeholder="Repeat new password"
             {...register('confirmPassword', {
-              required: 'Please confirm your password',
               validate: (value) =>
-                value === watch('newPassword') || 'Passwords do not match',
+                !watch('newPassword') || value === watch('newPassword') || 'Passwords do not match',
             })}
           />
-          {errors.confirmPassword && (
-            <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>
-          )}
+          {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>}
         </div>
 
         <div className="flex gap-3 pt-2">
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : 'Save Password'}
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
           </Button>
           <Button asChild variant="soft">
             <Link href={`/users/${id}`}>Cancel</Link>

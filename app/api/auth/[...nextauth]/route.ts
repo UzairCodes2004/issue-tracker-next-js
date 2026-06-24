@@ -33,15 +33,24 @@ const handler = NextAuth({
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      
-      if (user) token.id = user.id;
+    async jwt({ token, user, trigger, session }) {
+      if (user) {
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+      }
+      // When update() is called from the client, sync new values into token
+      if (trigger === 'update' && session) {
+        if (session.name) token.name = session.name;
+        if (session.email) token.email = session.email;
+      }
       return token;
     },
     async session({ session, token }) {
-      
-      if (session.user && token.id) {
+      if (session.user) {
         (session.user as any).id = token.id;
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
       }
       return session;
     }
