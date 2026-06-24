@@ -25,12 +25,12 @@ export default function EditIssuePage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  
+
   useEffect(() => {
     axios
       .get<IssueForm>(`/api/issues/${id}`)
       .then((res) => {
-        
+
         reset({
           title: res.data.title,
           description: res.data.description,
@@ -59,7 +59,7 @@ export default function EditIssuePage({
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
-      
+
       <Link href={`/issues/${id}`} className="text-sm text-indigo-600 hover:underline mb-4 inline-block">
         ← Back to Issue
       </Link>
@@ -75,7 +75,7 @@ export default function EditIssuePage({
 
         <TextArea placeholder="Description" {...register('description')} />
 
-        
+
         <select
           {...register('status')}
           className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
