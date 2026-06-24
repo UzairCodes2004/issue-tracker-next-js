@@ -35,7 +35,6 @@ const NewIssuePage = () => {
       </TextField.Root>
       <TextArea placeholder='Description' className='my-5' {...register('description')}></TextArea>
 
-      {/* 4. Disabled button and updated text when submitting */}
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? 'Submitting...' : 'Submit New Issue'}
       </Button>
