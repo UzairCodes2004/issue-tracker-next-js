@@ -18,13 +18,11 @@ const handler = NextAuth({
           where: { email: credentials.email }
         });
 
-        if (!user) 
-          return null;
+        if (!user) return null;
 
         const isValid = await bcrypt.compare(credentials.password, user.password);
 
-        if (!isValid) 
-          return null;
+        if (!isValid) return null;
 
         return {
           id: user.id.toString(),
@@ -34,6 +32,20 @@ const handler = NextAuth({
       }
     })
   ],
+  callbacks: {
+    async jwt({ token, user }) {
+      
+      if (user) token.id = user.id;
+      return token;
+    },
+    async session({ session, token }) {
+      
+      if (session.user && token.id) {
+        (session.user as any).id = token.id;
+      }
+      return session;
+    }
+  },
   session: {
     strategy: "jwt"
   },

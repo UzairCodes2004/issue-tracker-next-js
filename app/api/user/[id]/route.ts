@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from '@/prisma/client'
-import { parse } from "path";
+import prisma from '@/prisma/client';
+import bcrypt from 'bcrypt';
 
 
 interface Props {
@@ -26,12 +26,11 @@ export async function GET(request: NextRequest, { params }: Props) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-
     const { password, ...userData } = user;
     return NextResponse.json(userData);
 }
 
-// PUT
+// PUT — hash password before saving
 export async function PUT(request: NextRequest, { params }: Props) {
     try {
         const { id } = await params;
@@ -39,19 +38,22 @@ export async function PUT(request: NextRequest, { params }: Props) {
 
         const body = await request.json();
 
+        
+        const hashedPassword = await bcrypt.hash(body.password, 10);
+
         const updatedUser = await prisma.users.update({
             where: { id: userID },
             data: {
                 name: body.name,
                 email: body.email,
-                password: body.password
-
+                password: hashedPassword,
             }
-        }
-        )
-        return NextResponse.json(updatedUser)
+        });
+
+        const { password, ...userData } = updatedUser;
+        return NextResponse.json(userData);
     } catch (error) {
-        return NextResponse.json({ message: "Could not update the user", error: String(error) }, { status: 500 })
+        return NextResponse.json({ message: "Could not update the user", error: String(error) }, { status: 500 });
     }
 
 }

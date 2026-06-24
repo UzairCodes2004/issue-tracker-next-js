@@ -29,7 +29,12 @@ const NavBar = () => {
                 
                 {status === "authenticated" && (
                     <div className='flex items-center space-x-3'>
-                        <span className='text-sm text-zinc-600 font-medium'>{session.user?.email}</span>
+                        <Link
+                            href={`/users/${(session.user as any).id}`}
+                            className='text-sm text-indigo-600 hover:underline font-medium'
+                        >
+                            {session.user?.name}
+                        </Link>
                         <button 
                             onClick={() => signOut({ callbackUrl: '/' })}
                             className='text-sm text-red-500 hover:text-red-700 transition-colors font-medium cursor-pointer'
