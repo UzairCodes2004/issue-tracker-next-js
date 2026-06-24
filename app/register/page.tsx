@@ -1,0 +1,86 @@
+'use client';
+import React, { useState } from 'react';
+import { TextField, Button } from '@radix-ui/themes';
+import { useForm } from 'react-hook-form';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+interface RegisterForm {
+  name: string;
+  email: string;
+  password: string;
+}
+
+const RegisterPage = () => {
+  const router = useRouter();
+  const { register, handleSubmit, formState: { errors } } = useForm<RegisterForm>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const onSubmit = async (data: RegisterForm) => {
+    try {
+      setIsSubmitting(true);
+      setError('');
+      await axios.post('/api/register', data);
+      router.push('/login');
+    } catch (err: any) {
+      setIsSubmitting(false);
+      if (err.response && err.response.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.response && Array.isArray(err.response.data)) {
+        setError(err.response.data[0]?.message || 'Validation failed');
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100 mt-10">
+      <h1 className="text-2xl font-bold text-slate-800 mb-6">Create Account</h1>
+
+      {error && (
+        <p className="bg-red-50 text-red-600 border border-red-100 text-sm p-3 rounded-lg mb-4">
+          {error}
+        </p>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <div>
+          <label className="text-xs font-semibold text-slate-500 block mb-1">Name</label>
+          <TextField.Root placeholder="John Doe" {...register('name', { required: 'Name is required' })} />
+          {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-slate-500 block mb-1">Email address</label>
+          <TextField.Root type="email" placeholder="email@example.com" {...register('email', { required: 'Email is required' })} />
+          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-slate-500 block mb-1">Password</label>
+          <TextField.Root type="password" placeholder="••••••" {...register('password', { 
+            required: 'Password is required', 
+            minLength: { value: 6, message: 'Password must be at least 6 characters' } 
+          })} />
+          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+        </div>
+
+        <Button type="submit" disabled={isSubmitting} className="mt-2">
+          {isSubmitting ? 'Registering...' : 'Register'}
+        </Button>
+
+        <p className="text-sm text-slate-500 mt-4 text-center">
+          Already have an account?{' '}
+          <Link href="/login" className="text-indigo-600 hover:underline">
+            Login
+          </Link>
+        </p>
+      </form>
+    </div>
+  );
+};
+
+export default RegisterPage;
