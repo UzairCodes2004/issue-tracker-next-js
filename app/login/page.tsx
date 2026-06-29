@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 interface LoginForm {
   email: string;
@@ -16,6 +17,7 @@ const LoginPage = () => {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data: LoginForm) => {
     try {
@@ -55,13 +57,32 @@ const LoginPage = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <div>
           <label className="text-xs font-semibold text-slate-500 block mb-1">Email address</label>
-          <TextField.Root type="email" placeholder="email@example.com" {...register('email', { required: 'Email is required' })} />
+          <TextField.Root
+            type="email"
+            placeholder="email@example.com"
+            {...register('email', { required: 'Email is required' })}
+          />
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
         </div>
 
         <div>
           <label className="text-xs font-semibold text-slate-500 block mb-1">Password</label>
-          <TextField.Root type="password" placeholder="••••••" {...register('password', { required: 'Password is required' })} />
+          <div className="relative">
+            <TextField.Root
+              type={showPassword ? 'text' : 'password'}
+              placeholder="••••••"
+              {...register('password', { required: 'Password is required' })}
+              className="w-full pr-10" // space for the eye icon
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <FiEyeOff className="w-5 h-5" /> : <FiEye className="w-5 h-5" />}
+            </button>
+          </div>
           {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
         </div>
 
