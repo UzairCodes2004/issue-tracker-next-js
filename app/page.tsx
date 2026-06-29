@@ -12,7 +12,7 @@ type Issue = {
 };
 
 export default function Home() {
-  // Fetch issues with React Query (tanstack query v5)
+  // fetch using react query
   const { data: issues = [], isLoading, error } = useQuery<Issue[]>({
     queryKey: ['issues'],
     queryFn: () => axios.get<Issue[]>('/api/issues').then(res => res.data),
@@ -27,10 +27,10 @@ export default function Home() {
   const inProgress = issues.filter(i => i.status === 'IN_PROGRESS').length;
   const closed = issues.filter(i => i.status === 'CLOSED').length;
 
-  // Maximum value for scaling the bars (at least 1 to avoid division by zero)
+  
   const maxVal = Math.max(total, open, inProgress, closed, 1);
 
-  // Statistics cards data
+  
   const cards = [
     { label: 'Total Issues', count: total, bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-700' },
     { label: 'Open Issues', count: open, bg: 'bg-emerald-50', border: 'border-emerald-100', text: 'text-emerald-700' },
@@ -73,7 +73,7 @@ export default function Home() {
               
               {/* Bar: Total */}
               <div className="flex flex-col items-center w-full group">
-                <div className="w-16 bg-gradient-to-t from-indigo-500 to-indigo-400 rounded-t-lg transition-all duration-500 ease-out hover:opacity-90 shadow-sm flex items-end justify-center"
+                <div className="w-16 bg-linear-to-t from-indigo-500 to-indigo-400 rounded-t-lg transition-all duration-500 ease-out hover:opacity-90 shadow-sm flex items-end justify-center"
                      style={{ height: `${(total / maxVal) * 220}px` }}>
                   <span className="text-white text-xs font-bold mb-2 group-hover:scale-110 transition-transform">{total}</span>
                 </div>
@@ -81,7 +81,7 @@ export default function Home() {
 
               {/* Bar: Open */}
               <div className="flex flex-col items-center w-full group">
-                <div className="w-16 bg-gradient-to-t from-emerald-500 to-emerald-400 rounded-t-lg transition-all duration-500 ease-out hover:opacity-90 shadow-sm flex items-end justify-center"
+                <div className="w-16 bg-linear-to-t from-emerald-500 to-emerald-400 rounded-t-lg transition-all duration-500 ease-out hover:opacity-90 shadow-sm flex items-end justify-center"
                      style={{ height: `${(open / maxVal) * 220}px` }}>
                   <span className="text-white text-xs font-bold mb-2 group-hover:scale-110 transition-transform">{open}</span>
                 </div>
@@ -89,7 +89,7 @@ export default function Home() {
 
               {/* Bar: In Progress */}
               <div className="flex flex-col items-center w-full group">
-                <div className="w-16 bg-gradient-to-t from-amber-500 to-amber-400 rounded-t-lg transition-all duration-500 ease-out hover:opacity-90 shadow-sm flex items-end justify-center"
+                <div className="w-16 bg-linear-to-t from-amber-500 to-amber-400 rounded-t-lg transition-all duration-500 ease-out hover:opacity-90 shadow-sm flex items-end justify-center"
                      style={{ height: `${(inProgress / maxVal) * 220}px` }}>
                   <span className="text-white text-xs font-bold mb-2 group-hover:scale-110 transition-transform">{inProgress}</span>
                 </div>
@@ -97,7 +97,7 @@ export default function Home() {
 
               {/* Bar: Closed */}
               <div className="flex flex-col items-center w-full group">
-                <div className="w-16 bg-gradient-to-t from-slate-500 to-slate-400 rounded-t-lg transition-all duration-500 ease-out hover:opacity-90 shadow-sm flex items-end justify-center"
+                <div className="w-16 bg-linear-to-t from-slate-500 to-slate-400 rounded-t-lg transition-all duration-500 ease-out hover:opacity-90 shadow-sm flex items-end justify-center"
                      style={{ height: `${(closed / maxVal) * 220}px` }}>
                   <span className="text-white text-xs font-bold mb-2 group-hover:scale-110 transition-transform">{closed}</span>
                 </div>
@@ -105,7 +105,7 @@ export default function Home() {
 
             </div>
 
-            {/* Chart Labels under the border line */}
+            
             <div className="flex justify-around w-full max-w-lg mt-3 text-center px-4 gap-6">
               <span className="text-xs font-semibold text-indigo-700 w-full">Total</span>
               <span className="text-xs font-semibold text-emerald-700 w-full">Open</span>
