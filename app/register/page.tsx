@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { TextField, Button } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
-import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { createUser } from '@/app/services/usersService';
 
 interface RegisterForm {
   name: string;
@@ -24,7 +24,8 @@ const RegisterPage = () => {
     try {
       setIsSubmitting(true);
       setError('');
-      await axios.post('http://localhost:5000/users', data);
+
+      await createUser(data);
       router.push('/login');
     } catch (err: any) {
       setIsSubmitting(false);

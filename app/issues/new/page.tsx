@@ -2,8 +2,8 @@
 import { TextField, TextArea, Button } from '@radix-ui/themes'
 import React, { useState } from 'react'
 import { useForm } from "react-hook-form";
-import axios from 'axios'
 import { useRouter } from 'next/navigation';
+import { createIssue } from '@/app/services/issuesService';
 
 interface IssueForm {
   title: string;
@@ -18,14 +18,12 @@ const NewIssuePage = () => {
   const onSubmit = async (data: IssueForm) => {
     try {
       setIsSubmitting(true);
-      await axios.post('http://localhost:5000/issues', data);
-
-
+     
+      await createIssue(data);
       router.push('/issues');
     } catch (error) {
       setIsSubmitting(false);
       console.error("Failed to submit issue:", error);
-
     }
   }
 

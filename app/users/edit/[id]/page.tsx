@@ -4,9 +4,8 @@ import { TextField, Button } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from 'axios';
 import { useSession } from "next-auth/react";
-import { updateUser,getUserById } from '@/app/services/usersService';
+import { updateUser, getUserById } from '@/app/services/usersService';
 
 
 interface EditUserForm {
@@ -37,9 +36,9 @@ export default function EditUserPage({
   const [error, setError] = useState('');
   const { data: session, update } = useSession()
   useEffect(() => {
-    
-      getUserById(id)
-      .then((res) => setUser(res.data))
+
+    getUserById(id)
+      .then((data) => setUser(data))
       .catch(() => setError('Failed to load profile data.'))
       .finally(() => setLoading(false));
   }, [id]);
@@ -49,8 +48,8 @@ export default function EditUserPage({
     try {
       setIsSubmitting(true);
       setError('');
-
-      await axios.put(`http://localhost:5000/users/${id}`, {
+      
+      await updateUser(id, {
         name: data.name,
         email: data.email,
         password: data.newPassword,
@@ -58,7 +57,6 @@ export default function EditUserPage({
       await update({
         name: data.name,
         email: data.email,
-        password: data.newPassword
       });
       router.push(`/users/${id}`);
     } catch (err) {

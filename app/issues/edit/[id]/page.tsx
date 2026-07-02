@@ -27,7 +27,7 @@ export default function EditIssuePage({
 
 
   useEffect(() => {
-    // getIssueById calls the service — no URL written here
+    
     getIssueById(id)
       .then((data) => {
         reset({
@@ -44,7 +44,7 @@ export default function EditIssuePage({
     try {
       setIsSubmitting(true);
       setError('');
-      // updateIssue calls the service — no URL written here
+      
       await updateIssue(id, data);
       router.push('/issues');
     } catch (err) {

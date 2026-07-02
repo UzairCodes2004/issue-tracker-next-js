@@ -26,8 +26,9 @@ export default function UserProfilePage({
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
- getUserById(id)
-      .then((res) => setUser(res.data))
+    
+    getUserById(id)
+      .then((data) => setUser(data))
       .catch(() => setError('Failed to load profile.'))
       .finally(() => setLoading(false));
   }, [id]);

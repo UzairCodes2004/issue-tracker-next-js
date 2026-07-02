@@ -28,7 +28,7 @@ export default function IssueDetailPage({
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    // getIssueById calls the service — no URL written here
+    
     getIssueById(id)
       .then((data) => setIssue(data))
       .catch(() => setError('Failed to load issue.'))
@@ -38,7 +38,6 @@ export default function IssueDetailPage({
   const handleDelete = async () => {
     try {
       setDeleting(true);
-      // deleteIssue calls the service — no URL written here
       await deleteIssue(id);
       router.push('/issues');
     } catch (err) {
