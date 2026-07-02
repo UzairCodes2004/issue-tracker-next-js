@@ -4,6 +4,9 @@ import prisma from "@/prisma/client";
 import bcrypt from "bcrypt";
 import axios from "axios";
 import { email } from "zod";
+interface User{
+  
+}
 
 const handler = NextAuth({
   providers: [
@@ -15,7 +18,8 @@ const handler = NextAuth({
       },
 
 
-                  //COMMENTEED THIS AUTHORIZE FUNCTION AS IT WAS PART OF NEXT JS BACKGROUND
+
+                      //COMMENTEED THIS AUTHORIZE FUNCTION AS IT WAS PART OF NEXT JS BACKGROUND
 
 
       // async authorize(credentials) {
@@ -38,28 +42,31 @@ const handler = NextAuth({
       //   };
       // }
    
-   
-              // NEST JS AUTHORIZE FUNCTION
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
 
-   async authorize(credentials){
-    if(!credentials?.email||!credentials?.password)
-      return null;
-    try{
-      const {data}= await axios.post("http://localhost:5000/auth/login",{
-        email:credentials.email,
-        password:credentials.password
-      });
+        try {
+          // send req to nest js login endpoint
+          const { data } = await axios.post("http://localhost:5000/auth/login", {
+            email: credentials.email,
+            password: credentials.password
+          });
 
-      return {
-        id:data.user.id,
-        name:data.user.name,
-        email:data.user.email
+          // nest js response returns accessToken: string, userId: number, userName: string 
+          if (data && data.accessToken) {
+            return {
+              id: data.userId.toString(),
+              name: data.userName,
+              email: credentials.email,
+              accessToken: data.accessToken
+            };
+          }
+          return null;
+        } catch (error: any) {
+          console.error("Auth error:", error.response?.data || error.message);
+          return null;
+        }
       }
-    }
-    catch{
-      return null
-    }
-   }
     })
   ],
   callbacks: {
@@ -68,8 +75,8 @@ const handler = NextAuth({
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
+        token.accessToken = (user as any).accessToken;
       }
-      // When update() is called from the client, sync new values into token
       if (trigger === 'update' && session) {
         if (session.name) token.name = session.name;
         if (session.email) token.email = session.email;
@@ -79,8 +86,9 @@ const handler = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id;
-        session.user.name = token.name as string;
-        session.user.email = token.email as string;
+        (session.user as any).name = token.name;
+        (session.user as any).email = token.email;
+        (session.user as any).accessToken = token.accessToken;
       }
       return session;
     }

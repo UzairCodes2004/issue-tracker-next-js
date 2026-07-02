@@ -3,7 +3,7 @@ import React, { useState, useEffect, use } from 'react';
 import { Button } from '@radix-ui/themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getIssueById, deleteIssue } from '@/app/services/issuesService';
+import { getIssueById,updateIssue, deleteIssue } from '@/app/services/issuesService';
 
 type Issue = {
   id: number;
