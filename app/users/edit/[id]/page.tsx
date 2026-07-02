@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import axios from 'axios';
 import { useSession } from "next-auth/react";
+import { updateUser,getUserById } from '@/app/services/usersService';
 
 
 interface EditUserForm {
@@ -36,8 +37,8 @@ export default function EditUserPage({
   const [error, setError] = useState('');
   const { data: session, update } = useSession()
   useEffect(() => {
-    axios
-      .get<UserProfile>(`/api/user/${id}`)
+    
+      getUserById(id)
       .then((res) => setUser(res.data))
       .catch(() => setError('Failed to load profile data.'))
       .finally(() => setLoading(false));
@@ -49,7 +50,7 @@ export default function EditUserPage({
       setIsSubmitting(true);
       setError('');
 
-      await axios.put(`/api/user/${id}`, {
+      await axios.put(`http://localhost:5000/users/${id}`, {
         name: data.name,
         email: data.email,
         password: data.newPassword,

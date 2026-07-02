@@ -4,8 +4,7 @@ import { Button } from '@radix-ui/themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
-import axios from 'axios';
-
+import { getUserById,deleteUser } from '@/app/services/usersService';
 type UserProfile = {
   id: number;
   name: string;
@@ -27,8 +26,7 @@ export default function UserProfilePage({
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    axios
-      .get<UserProfile>(`/api/user/${id}`)
+ getUserById(id)
       .then((res) => setUser(res.data))
       .catch(() => setError('Failed to load profile.'))
       .finally(() => setLoading(false));
@@ -37,7 +35,7 @@ export default function UserProfilePage({
   const handleDelete = async () => {
     try {
       setDeleting(true);
-      await axios.delete(`/api/user/${id}`);
+      deleteUser(id)
       
       await signOut({ callbackUrl: '/' });
     } catch (err) {

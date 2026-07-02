@@ -1,8 +1,8 @@
 'use client';
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import Link from 'next/link';
+import { getIssues } from './services/issuesService';
 
 type Issue = {
   id: string;
@@ -12,10 +12,11 @@ type Issue = {
 };
 
 export default function Home() {
-  // fetch using react query
+  // useQuery handles caching, loading, and error states automatically.
+  // queryFn calls our service — the page does not know about axios or any URL.
   const { data: issues = [], isLoading, error } = useQuery<Issue[]>({
     queryKey: ['issues'],
-    queryFn: () => axios.get<Issue[]>('/api/issues').then(res => res.data),
+    queryFn: getIssues,
   });
 
   if (isLoading) return <p className="text-slate-500 p-6 max-w-xl mx-auto">Loading dashboard...</p>;

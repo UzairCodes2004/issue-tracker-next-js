@@ -3,7 +3,7 @@ import React, { useState, useEffect, use } from 'react';
 import { Button } from '@radix-ui/themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
+import { getIssueById, deleteIssue } from '@/app/services/issuesService';
 
 type Issue = {
   id: number;
@@ -28,9 +28,9 @@ export default function IssueDetailPage({
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    axios
-      .get<Issue>(`/api/issues/${id}`)
-      .then((res) => setIssue(res.data))
+    // getIssueById calls the service — no URL written here
+    getIssueById(id)
+      .then((data) => setIssue(data))
       .catch(() => setError('Failed to load issue.'))
       .finally(() => setLoading(false));
   }, [id]);
@@ -38,7 +38,8 @@ export default function IssueDetailPage({
   const handleDelete = async () => {
     try {
       setDeleting(true);
-      await axios.delete(`/api/issues/${id}`);
+      // deleteIssue calls the service — no URL written here
+      await deleteIssue(id);
       router.push('/issues');
     } catch (err) {
       setDeleting(false);

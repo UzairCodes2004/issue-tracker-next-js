@@ -4,7 +4,7 @@ import { TextField, TextArea, Button } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import axios from 'axios';
+import { getIssueById, updateIssue } from '@/app/services/issuesService';
 
 interface IssueForm {
   title: string;
@@ -27,14 +27,13 @@ export default function EditIssuePage({
 
 
   useEffect(() => {
-    axios
-      .get<IssueForm>(`/api/issues/${id}`)
-      .then((res) => {
-
+    // getIssueById calls the service — no URL written here
+    getIssueById(id)
+      .then((data) => {
         reset({
-          title: res.data.title,
-          description: res.data.description,
-          status: res.data.status,
+          title: data.title,
+          description: data.description,
+          status: data.status,
         });
       })
       .catch(() => setError('Failed to load issue data.'))
@@ -45,7 +44,8 @@ export default function EditIssuePage({
     try {
       setIsSubmitting(true);
       setError('');
-      await axios.put(`/api/issues/${id}`, data);
+      // updateIssue calls the service — no URL written here
+      await updateIssue(id, data);
       router.push('/issues');
     } catch (err) {
       setIsSubmitting(false);

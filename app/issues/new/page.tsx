@@ -18,7 +18,7 @@ const NewIssuePage = () => {
   const onSubmit = async (data: IssueForm) => {
     try {
       setIsSubmitting(true);
-      await axios.post('/api/issues', data);
+      await axios.post('http://localhost:5000/issues', data);
 
 
       router.push('/issues');

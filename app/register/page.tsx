@@ -24,7 +24,7 @@ const RegisterPage = () => {
     try {
       setIsSubmitting(true);
       setError('');
-      await axios.post('/api/register', data);
+      await axios.post('http://localhost:5000/users', data);
       router.push('/login');
     } catch (err: any) {
       setIsSubmitting(false);

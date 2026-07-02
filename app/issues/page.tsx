@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@radix-ui/themes';
 import Link from 'next/link';
-import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
+import { getIssues } from '@/app/services/issuesService';
 
 type Issue = {
   id: string;
@@ -15,11 +15,10 @@ type Issue = {
 const Issues = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  // using reaact query to fetch data instead of useeffects
-
+  // useQuery fetches issues via the service — no URL or axios logic in this file.
   const { data: list = [], isLoading, error } = useQuery<Issue[]>({
     queryKey: ['issues'],
-    queryFn: () => axios.get<Issue[]>('/api/issues').then(res => res.data),
+    queryFn: getIssues,
   });
 
   // filter issues based on state i.e all open closed in progress
