@@ -1,8 +1,32 @@
 'use client';
 
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { FaSignInAlt, FaUserPlus } from 'react-icons/fa';
 
 export default function Home() {
+    const { status } = useSession();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (status === 'authenticated') {
+            router.replace('/dashboard');
+        }
+    }, [status, router]);
+
+    if (status === 'loading') {
+        return (
+            <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+                <p className="text-slate-500 font-medium">Loading...</p>
+            </div>
+        );
+    }
+
+    if (status === 'authenticated') {
+        return null;
+    }
+
     return (
         <main className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center px-4">
            

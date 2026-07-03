@@ -1,9 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import prisma from "@/prisma/client";
-import bcrypt from "bcrypt";
 import axios from "axios";
-import { email } from "zod";
 import GoogleProvider from "next-auth/providers/google"
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -66,23 +63,38 @@ const handler = NextAuth({
             name: user.name,
           });
 
-          (user as any).id = data.userId.toString();
+          user.id = data.userId.toString();
           (user as any).accessToken = data.accessToken;
+
+          // Store in account object to safely forward to jwt callback
+          (account as any).accessToken = data.accessToken;
+          (account as any).userId = data.userId;
+
           return true;
         } catch (err) {
           console.error("Google sign-in backend error:", err);
-          return false;
+          return false; // block sign-in if backend rejects
         }
       }
-      return true; 
+      return true; // credentials flow already validated in authorize()
     },
-    async jwt({ token, user, trigger, session }) {
-      if (user) {
+    async jwt({ token, user, account, trigger, session }) {
+      // Google sign-in: use values forwarded via the account object from signIn callback
+      if (account?.provider === "google") {
+        token.accessToken = (account as any).accessToken;
+        token.id = (account as any).userId?.toString();
+        token.name = user?.name;
+        token.email = user?.email;
+      }
+
+      // Credentials sign-in: user object has the accessToken set in authorize()
+      if (account?.provider === "credentials" && user) {
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
         token.accessToken = (user as any).accessToken;
       }
+
       if (trigger === 'update' && session) {
         if (session.name) token.name = session.name;
         if (session.email) token.email = session.email;
@@ -90,6 +102,8 @@ const handler = NextAuth({
       return token;
     },
     async session({ session, token }) {
+      // Expose token fields at both session root and session.user for compatibility
+      (session as any).accessToken = token.accessToken;
       if (session.user) {
         (session.user as any).id = token.id;
         (session.user as any).name = token.name;
@@ -99,20 +113,21 @@ const handler = NextAuth({
       return session;
     },
     async redirect({ url, baseUrl }) {
-      if (url === baseUrl || url === "/" || url.includes("/login")) {
-        return `${baseUrl}/dashboard`;
-      }
-      
-      if (url.startsWith("/")) {
-        return `${baseUrl}${url}`;
-      }
-      try {
-        const parsedUrl = new URL(url);
-        if (parsedUrl.origin === baseUrl) {
-          return url;
+      // After any sign-in, always go to /dashboard
+      if (url.startsWith(baseUrl)) {
+        // If the destination is within our app, allow it
+        const path = url.slice(baseUrl.length);
+        if (path === '' || path === '/' || path.startsWith('/login') || path.startsWith('/api/auth')) {
+          return `${baseUrl}/dashboard`;
         }
-      } catch {
-        
+        return url;
+      }
+      // Relative URL
+      if (url.startsWith("/")) {
+        if (url.startsWith("/login") || url.startsWith("/api/auth")) {
+          return `${baseUrl}/dashboard`;
+        }
+        return `${baseUrl}${url}`;
       }
       return `${baseUrl}/dashboard`;
     }
@@ -147,4 +162,4 @@ export { handler as GET, handler as POST };
 //     name: user.name,
 //     email: user.email
 //   };
-// }
+// } 
