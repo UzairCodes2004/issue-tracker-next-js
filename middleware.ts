@@ -4,12 +4,12 @@ import { NextResponse } from "next/server";
 
 export default withAuth(
   function middleware() {
-    
+
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token, 
+      authorized: ({ token }) => !!token,
     },
   }
 );
@@ -17,7 +17,8 @@ export default withAuth(
 
 export const config = {
   matcher: [
+    "/dashboard",
     "/issues/:path*",
-  
+
   ],
 };

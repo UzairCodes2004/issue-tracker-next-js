@@ -1,7 +1,6 @@
 'use client';
 import React, { ReactNode, useEffect } from 'react';
 import { SessionProvider, useSession } from 'next-auth/react';
-
 const SessionSync = () => {
   const { data: session } = useSession();
 

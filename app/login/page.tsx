@@ -90,8 +90,28 @@ const LoginPage = () => {
           {isSubmitting ? 'Logging in...' : 'Login'}
         </Button>
 
-        <p className="text-sm text-slate-500 mt-4 text-center">
-          Don&apos;t have an account?{' '}
+        <div className="relative flex py-2 items-center">
+          <div className="grow border-t border-slate-200"></div>
+          <span className="shrink mx-4 text-slate-400 text-xs uppercase">Or</span>
+          <div className="grow border-t border-slate-200"></div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+          className="flex items-center justify-center gap-2 border border-slate-200 rounded-lg py-2 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <path
+              fill="#EA4335"
+              d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.555 0-6.437-2.883-6.437-6.437 0-3.555 2.882-6.437 6.437-6.437 1.488 0 2.85.508 3.93 1.358l3.053-3.053C18.9 2.057 15.775 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c5.895 0 10.865-4.225 10.865-11.24 0-.693-.06-1.378-.176-1.955H12.24z"
+            />
+          </svg>
+          Sign in with Google
+        </button>
+
+        <p className="text-sm text-slate-500 mt-2 text-center">
+          Dont have an account?{' '}
           <Link href="/register" className="text-indigo-600 hover:underline">
             Register
           </Link>

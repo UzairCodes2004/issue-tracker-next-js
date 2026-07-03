@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { createUser } from '@/app/services/usersService';
+import { signIn } from 'next-auth/react'; // ✅ import signIn
 
 interface RegisterForm {
   name: string;
@@ -25,8 +26,23 @@ const RegisterPage = () => {
       setIsSubmitting(true);
       setError('');
 
+      
       await createUser(data);
-      router.push('/login');
+
+      
+      const result = await signIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false, 
+      });
+
+      if (result?.error) {
+        
+        router.push('/login');
+      } else {
+        
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       setIsSubmitting(false);
       if (err.response && err.response.data?.error) {

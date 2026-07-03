@@ -4,12 +4,12 @@ import { TextField, TextArea, Button } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getIssueById, updateIssue } from '@/app/services/issuesService';
+import { getIssueById, updateIssue, IssueStatus } from '@/app/services/issuesService';
 
 interface IssueForm {
   title: string;
   description: string;
-  status: string;
+  status: IssueStatus;
 }
 
 export default function EditIssuePage({
