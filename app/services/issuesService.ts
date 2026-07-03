@@ -37,7 +37,7 @@ export const createIssue = async (issue: IssuePayload): Promise<Issue> => {
   return res.data;
 };
 
-// ─── PUT update an existing issue ────────────────────────────────────────────
+// PUT update an existing issue 
 export const updateIssue = async (
   id: string,
   updatedIssue: Partial<IssuePayload>
@@ -46,7 +46,7 @@ export const updateIssue = async (
   return res.data;
 };
 
-// ─── DELETE an issue ─────────────────────────────────────────────────────────
+// DELETE an issue delete/:id
 export const deleteIssue = async (id: string): Promise<Issue> => {
   const res = await axiosInstance.delete<Issue>(ENDPOINTS.ISSUE_BY_ID(id));
   return res.data;
