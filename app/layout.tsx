@@ -33,12 +33,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
 
-      <body className="min-h-full flex flex-col">
+      <body >
         <QueryClientProvider>
           <AuthProvider>
             <Theme>
               <NavBar/>
-              <main className="p-5"> {children}</main>
+              <main > {children}</main>
             </Theme>
           </AuthProvider>
         </QueryClientProvider>

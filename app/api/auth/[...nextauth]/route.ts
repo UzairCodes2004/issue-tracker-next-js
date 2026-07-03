@@ -66,20 +66,20 @@ const handler = NextAuth({
           user.id = data.userId.toString();
           (user as any).accessToken = data.accessToken;
 
-          // Store in account object to safely forward to jwt callback
+          
           (account as any).accessToken = data.accessToken;
           (account as any).userId = data.userId;
 
           return true;
         } catch (err) {
           console.error("Google sign-in backend error:", err);
-          return false; // block sign-in if backend rejects
+          return false; 
         }
       }
-      return true; // credentials flow already validated in authorize()
+      return true;
     },
     async jwt({ token, user, account, trigger, session }) {
-      // Google sign-in: use values forwarded via the account object from signIn callback
+     
       if (account?.provider === "google") {
         token.accessToken = (account as any).accessToken;
         token.id = (account as any).userId?.toString();
@@ -87,7 +87,7 @@ const handler = NextAuth({
         token.email = user?.email;
       }
 
-      // Credentials sign-in: user object has the accessToken set in authorize()
+     
       if (account?.provider === "credentials" && user) {
         token.id = user.id;
         token.name = user.name;
