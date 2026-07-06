@@ -14,4 +14,6 @@ export const ENDPOINTS = {
   // User routes
   USERS: "/users",
   USER_BY_ID: (id: string) => `/users/${id}`,
-};
+  AUTH:"/auth"
+
+};
