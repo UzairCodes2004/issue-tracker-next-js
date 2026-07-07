@@ -36,45 +36,47 @@ export async function PUT(request: NextRequest, { params }: Props) {
         const { id } = await params;
         const userID = parseInt(id);
 
+        if (isNaN(userID)) {
+            return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+        }
+
         const body = await request.json();
 
-        
-        const hashedPassword = await bcrypt.hash(body.password, 10);
+        // Build update data - only hash password if provided
+        const updateData: { name?: string; email?: string; password?: string } = {};
+        if (body.name) updateData.name = body.name;
+        if (body.email) updateData.email = body.email;
+        if (body.password && body.password.trim() !== '') {
+            updateData.password = await bcrypt.hash(body.password, 10);
+        }
 
         const updatedUser = await prisma.users.update({
             where: { id: userID },
-            data: {
-                name: body.name,
-                email: body.email,
-                password: hashedPassword,
-            }
+            data: updateData,
         });
 
         const { password, ...userData } = updatedUser;
         return NextResponse.json(userData);
     } catch (error) {
-        return NextResponse.json({ message: "Could not update the user", error: String(error) }, { status: 500 });
+        console.error("PUT /api/user/[id] error:", error);
+        return NextResponse.json({ error: "Could not update the user" }, { status: 500 });
     }
-
 }
 
-// DELETE 
+// DELETE
 export async function DELETE(request: NextRequest, { params }: Props) {
     try {
-
         const { id } = await params;
-
         const userID = parseInt(id);
         const deletedUser = await prisma.users.delete({
             where: {
                 id: userID
             }
-        }
-
-        )
-        return NextResponse.json({ message: " Following User is deleted ", deletedUser })
+        });
+        const { password, ...userData } = deletedUser;
+        return NextResponse.json({ message: "Following User is deleted", deletedUser: userData });
     } catch (error) {
-        return NextResponse.json('Could not delete the user', { status: 500 })
+        console.error("DELETE /api/user/[id] error:", error);
+        return NextResponse.json({ error: 'Could not delete the user' }, { status: 500 });
     }
-
 }

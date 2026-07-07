@@ -10,6 +10,7 @@ if (!googleClientId || !googleClientSecret) {
 }
 
 const handler = NextAuth({
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     GoogleProvider({
       clientId: googleClientId,
@@ -141,25 +142,3 @@ const handler = NextAuth({
 });
 
 export { handler as GET, handler as POST };
-//COMMENTEED THIS AUTHORIZE FUNCTION AS IT WAS PART OF NEXT JS BACKGROUND
-
-
-// async authorize(credentials) {
-//   if (!credentials?.email || !credentials?.password) return null;
-
-//   const user = await prisma.users.findUnique({
-//     where: { email: credentials.email }
-//   });
-
-//   if (!user) return null;
-
-//   const isValid = await bcrypt.compare(credentials.password, user.password);
-
-//   if (!isValid) return null;
-
-//   return {
-//     id: user.id.toString(),
-//     name: user.name,
-//     email: user.email
-//   };
-// } 

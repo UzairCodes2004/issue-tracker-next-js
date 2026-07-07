@@ -26,27 +26,29 @@ const RegisterPage = () => {
       setIsSubmitting(true);
       setError('');
 
-      
+
       await createUser(data);
 
-      
+
       const result = await signIn('credentials', {
         email: data.email,
         password: data.password,
-        redirect: false, 
+        redirect: false,
       });
 
       if (result?.error) {
-        
+
         router.push('/login');
       } else {
-        
+
         router.push('/dashboard');
       }
     } catch (err: any) {
       setIsSubmitting(false);
       if (err.response && err.response.data?.error) {
         setError(err.response.data.error);
+      } else if (err.response && err.response.data?.message) {
+        setError(err.response.data.message);
       } else if (err.response && Array.isArray(err.response.data)) {
         setError(err.response.data[0]?.message || 'Validation failed');
       } else {

@@ -3,7 +3,8 @@ import React, { useState, useEffect, use } from 'react';
 import { Button } from '@radix-ui/themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getIssueById, updateIssue, deleteIssue, Issue } from '@/app/services/issuesService';
+import { useQueryClient } from '@tanstack/react-query';
+import { getIssueById, deleteIssue, Issue } from '@/app/services/issuesService';
 
 
 export default function IssueDetailPage({
@@ -13,6 +14,7 @@ export default function IssueDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,6 +34,8 @@ export default function IssueDetailPage({
     try {
       setDeleting(true);
       await deleteIssue(id);
+      // Invalidate the issues cache so the list and dashboard refresh
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
       router.push('/issues');
     } catch (err) {
       setDeleting(false);

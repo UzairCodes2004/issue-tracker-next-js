@@ -2,15 +2,16 @@
 import React, { ReactNode, useEffect } from 'react';
 import { SessionProvider, useSession } from 'next-auth/react';
 const SessionSync = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (session && (session as any).accessToken) {
+    if (status === 'authenticated' && session && (session as any).accessToken) {
       localStorage.setItem("token", (session as any).accessToken);
-    } else if (session === null) {
+    } else if (status === 'unauthenticated') {
+      // Only clear when definitively unauthenticated (not during loading)
       localStorage.removeItem("token");
     }
-  }, [session]);
+  }, [session, status]);
 
   return null;
 };

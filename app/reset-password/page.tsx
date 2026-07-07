@@ -53,7 +53,7 @@ export default function ResetPasswordPage() {
       setMessage(response.message || "Password reset successfully!");
       setTimeout(() => router.push("/login?reset=success"), 3000);
     } catch (err: any) {
-      setError(err.message || "Failed to reset password. Please try again.");
+      setError(err?.response?.data?.message || err?.message || "Failed to reset password. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

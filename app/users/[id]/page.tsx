@@ -36,8 +36,7 @@ export default function UserProfilePage({
   const handleDelete = async () => {
     try {
       setDeleting(true);
-      deleteUser(id)
-      
+      await deleteUser(id);
       await signOut({ callbackUrl: '/' });
     } catch (err) {
       setDeleting(false);

@@ -40,8 +40,9 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      console.warn("Unauthorized — clearing token and redirecting to login.");
-      if (typeof window !== "undefined") {
+      // Don't redirect if we're already on the login page
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+        console.warn("Unauthorized — clearing token and redirecting to login.");
         localStorage.removeItem("token");
         window.location.href = "/login";
       }

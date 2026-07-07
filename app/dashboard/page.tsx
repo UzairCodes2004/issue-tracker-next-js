@@ -102,10 +102,10 @@ export default function Dashboard() {
 
             
             <div className="flex justify-around w-full max-w-lg mt-3 text-center px-4 gap-6">
-              <span className="text-xs font-semibold text-indigo-700 w-full">Total</span>
-              <span className="text-xs font-semibold text-emerald-700 w-full">Open</span>
-              <span className="text-xs font-semibold text-amber-700 w-full">In Progress</span>
-              <span className="text-xs font-semibold text-slate-600 w-full">Closed</span>
+              <span className="text-xs font-semibold text-indigo-700 flex-1">Total</span>
+              <span className="text-xs font-semibold text-emerald-700 flex-1">Open</span>
+              <span className="text-xs font-semibold text-amber-700 flex-1">In Progress</span>
+              <span className="text-xs font-semibold text-slate-600 flex-1">Closed</span>
             </div>
           </div>
         )}

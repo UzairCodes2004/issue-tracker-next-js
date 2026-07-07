@@ -48,12 +48,17 @@ export default function EditUserPage({
     try {
       setIsSubmitting(true);
       setError('');
-      
-      await updateUser(id, {
+
+      // Only send password if it's been filled in
+      const updateData: { name: string; email: string; password?: string } = {
         name: data.name,
         email: data.email,
-        password: data.newPassword,
-      });
+      };
+      if (data.newPassword && data.newPassword.trim() !== '') {
+        updateData.password = data.newPassword;
+      }
+
+      await updateUser(id, updateData);
       await update({
         name: data.name,
         email: data.email,

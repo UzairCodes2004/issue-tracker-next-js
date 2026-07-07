@@ -3,6 +3,7 @@ import React, { useState, useEffect, use } from 'react';
 import { TextField, TextArea, Button } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { getIssueById, updateIssue, IssueStatus } from '@/app/services/issuesService';
 
@@ -19,6 +20,7 @@ export default function EditIssuePage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const { register, handleSubmit, reset } = useForm<IssueForm>();
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ export default function EditIssuePage({
 
 
   useEffect(() => {
-    
+
     getIssueById(id)
       .then((data) => {
         reset({
@@ -44,8 +46,10 @@ export default function EditIssuePage({
     try {
       setIsSubmitting(true);
       setError('');
-      
+
       await updateIssue(id, data);
+      // Invalidate the issues cache so the list and dashboard refresh
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
       router.push('/issues');
     } catch (err) {
       setIsSubmitting(false);

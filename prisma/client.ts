@@ -5,6 +5,7 @@ const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
 const prisma = globalForPrisma.prisma || new PrismaClient({
   adapter: new PrismaMariaDb(process.env.DATABASE_URL!),
+  datasourceUrl: process.env.DATABASE_URL,
 });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;

@@ -25,7 +25,8 @@ const ForgotPassword = () => {
       setMessage(response.message || 'If an account exists, a reset link has been sent.');
       reset(); // clear the form
     } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      const serverMessage = err?.response?.data?.message;
+      setError(serverMessage || err?.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

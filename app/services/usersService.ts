@@ -8,12 +8,23 @@ export interface UserPayload {
 }
 
 export interface User {
-  message: string;
   id: number;
   name: string;
   email: string;
-  resetToken:string;
-  tokenExpireAt:string
+}
+
+export interface DeleteUserResponse {
+  message: string;
+  deletedUser: User;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  id?: number;
+  name?: string;
+  email?: string;
+  resetToken?: string;
+  tokenExpireAt?: string;
 }
 
 export const getUsers = async (): Promise<User[]> => {
@@ -39,13 +50,13 @@ export const updateUser = async (
   return res.data;
 };
 
-export const deleteUser = async (id: string): Promise<User> => {
-  const res = await axiosInstance.delete<User>(ENDPOINTS.USER_BY_ID(id));
+export const deleteUser = async (id: string): Promise<DeleteUserResponse> => {
+  const res = await axiosInstance.delete<DeleteUserResponse>(ENDPOINTS.USER_BY_ID(id));
   return res.data;
 };
 
-export const forgotPassword = async(email:string): Promise<User>=>{
-  const res = await axiosInstance.post<User>(`${ENDPOINTS.AUTH}/forgot-password`, { email });
+export const forgotPassword = async(email: string): Promise<ForgotPasswordResponse> => {
+  const res = await axiosInstance.post<ForgotPasswordResponse>(`${ENDPOINTS.AUTH}/forgot-password`, { email });
   return res.data;
 }
 
