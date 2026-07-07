@@ -23,9 +23,9 @@ const ForgotPassword = () => {
     try {
       const response = await forgotPassword(data.email);
       setMessage(response.message || 'If an account exists, a reset link has been sent.');
-      reset(); // clear the form
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      reset(); 
+        } catch (err: any) {
+      setError( 'Enter valid email. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

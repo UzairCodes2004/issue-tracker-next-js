@@ -14,13 +14,6 @@ type ResetPasswordForm = {
   confirmPassword: string;
 };
 
-function getResetParams(search: string) {
-  const params = new URLSearchParams(search);
-  return {
-    token: params.get("token"),
-    email: params.get("email"),
-  };
-}
 
 export default function ResetPasswordPage() {
   return (
@@ -40,6 +33,11 @@ function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const urlToken = searchParams.get("token");
+  const urlEmail = searchParams.get("email");
+
+  const [lockedToken, setLockedToken] = useState<string | null>(null);
+  const [lockedEmail, setLockedEmail] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(true);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,21 +54,64 @@ function ResetPasswordContent() {
     formState: { errors },
   } = useForm<ResetPasswordForm>({ mode: "onSubmit" });
 
-  const token = searchParams.get("token");
-  const email = searchParams.get("email");
+  const paramsKeyRef = React.useRef<string | null>(null);
 
   useEffect(() => {
+    const getParamsKey = () => {
+      const params = new URLSearchParams(window.location.search);
+      return `${params.get("token") ?? ""}::${params.get("email") ?? ""}`;
+    };
+
+    paramsKeyRef.current = getParamsKey();
+
+    const handleUrlChange = () => {
+      const currentParams = getParamsKey();
+      if (currentParams !== paramsKeyRef.current) {
+        window.location.href = window.location.href;
+      }
+    };
+
+    const intervalId = window.setInterval(handleUrlChange, 250);
+    window.addEventListener("popstate", handleUrlChange);
+    window.addEventListener("hashchange", handleUrlChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("popstate", handleUrlChange);
+      window.removeEventListener("hashchange", handleUrlChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (urlToken && urlEmail) {
+      setLockedToken(urlToken);
+      setLockedEmail(urlEmail);
+      setLinkError(null);
+      return;
+    }
+
+    setLockedToken(null);
+    setLockedEmail(null);
+    setLinkError("Invalid reset link. Please request a new one.");
+    setIsValidating(false);
+  }, [urlToken, urlEmail]);
+
+  useEffect(() => {
+    if (!lockedToken || !lockedEmail) {
+      return;
+    }
+
     let cancelled = false;
 
     async function verifyLink() {
-      if (!token || !email) {
+      if (!lockedToken || !lockedEmail) {
         setLinkError("Invalid reset link. Please request a new one.");
         setIsValidating(false);
         return;
       }
 
       try {
-        await validateResetToken(email, token);
+        await validateResetToken(lockedEmail, lockedToken);
         if (!cancelled) {
           setLinkError(null);
         }
@@ -96,14 +137,10 @@ function ResetPasswordContent() {
     return () => {
       cancelled = true;
     };
-  }, [token, email]);
+  }, [lockedToken, lockedEmail]);
 
   const onSubmit = async (data: ResetPasswordForm) => {
-    const { token: currentToken, email: currentEmail } = getResetParams(
-      window.location.search,
-    );
-
-    if (!currentToken || !currentEmail) {
+    if (!lockedToken || !lockedEmail) {
       setError("Invalid reset link. Please request a new one.");
       return;
     }
@@ -113,9 +150,13 @@ function ResetPasswordContent() {
     setError(null);
 
     try {
+      const checkValid = await validateResetToken(lockedEmail, lockedToken);
+      if (!checkValid) {
+        throw new Error("Invalid link. Try again");
+      }
       const response = await resetPassword(
-        currentEmail,
-        currentToken,
+        lockedEmail,
+        lockedToken,
         data.newPassword,
       );
       setMessage(response.message || "Password reset successfully!");
@@ -140,7 +181,7 @@ function ResetPasswordContent() {
     );
   }
 
-  if (!token || !email || linkError) {
+  if (!lockedToken || !lockedEmail || linkError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-sm p-6 space-y-4 bg-white rounded-lg shadow-md text-center">
