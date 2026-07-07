@@ -1,5 +1,22 @@
 import axiosInstance from "../axios/axios";
 import { ENDPOINTS } from "../constants/endpoints";
+import { isAxiosError } from "axios";
+
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (isAxiosError(error)) {
+    const message = error.response?.data?.message;
+    if (Array.isArray(message)) {
+      return message.join(", ");
+    }
+    if (typeof message === "string") {
+      return message;
+    }
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+}
 
 export interface UserPayload {
   name: string;
@@ -48,6 +65,14 @@ export const forgotPassword = async(email:string): Promise<User>=>{
   const res = await axiosInstance.post<User>(`${ENDPOINTS.AUTH}/forgot-password`, { email });
   return res.data;
 }
+
+export const validateResetToken = async (email: string, token: string) => {
+  const res = await axiosInstance.post(`${ENDPOINTS.AUTH}/validate-reset-token`, {
+    email,
+    token,
+  });
+  return res.data;
+};
 
 export const resetPassword = async (email: string, token: string, newPassword: string) => {
   const res = await axiosInstance.post(`${ENDPOINTS.AUTH}/reset-password`, {

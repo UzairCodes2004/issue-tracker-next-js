@@ -57,13 +57,17 @@ const handler = NextAuth({
 
     async signIn({ user, account }) {
       if (account?.provider === "google") {
+        if (!account.id_token) {
+          return false;
+        }
+
         try {
           const { data } = await axios.post("http://localhost:5000/auth/google", {
-            email: user.email,
-            name: user.name,
+            idToken: account.id_token,
           });
 
           user.id = data.userId.toString();
+          user.name = data.userName;
           (user as any).accessToken = data.accessToken;
 
           

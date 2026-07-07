@@ -1,22 +1,47 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
-import { resetPassword } from "../services/usersService";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  getApiErrorMessage,
+  resetPassword,
+  validateResetToken,
+} from "../services/usersService";
 
 type ResetPasswordForm = {
   newPassword: string;
   confirmPassword: string;
 };
 
+function getResetParams(search: string) {
+  const params = new URLSearchParams(search);
+  return {
+    token: params.get("token"),
+    email: params.get("email"),
+  };
+}
+
 export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          Loading...
+        </div>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+
+function ResetPasswordContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [token, setToken] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
-  const [paramsReady, setParamsReady] = useState(false);
-
+  const [isValidating, setIsValidating] = useState(true);
+  const [linkError, setLinkError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,15 +56,54 @@ export default function ResetPasswordPage() {
     formState: { errors },
   } = useForm<ResetPasswordForm>({ mode: "onSubmit" });
 
+  const token = searchParams.get("token");
+  const email = searchParams.get("email");
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setToken(params.get("token"));
-    setEmail(params.get("email"));
-    setParamsReady(true);
-  }, []);
+    let cancelled = false;
+
+    async function verifyLink() {
+      if (!token || !email) {
+        setLinkError("Invalid reset link. Please request a new one.");
+        setIsValidating(false);
+        return;
+      }
+
+      try {
+        await validateResetToken(email, token);
+        if (!cancelled) {
+          setLinkError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setLinkError(
+            getApiErrorMessage(
+              err,
+              "Invalid or expired reset link. Please request a new one.",
+            ),
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsValidating(false);
+        }
+      }
+    }
+
+    setIsValidating(true);
+    verifyLink();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, email]);
 
   const onSubmit = async (data: ResetPasswordForm) => {
-    if (!token || !email) {
+    const { token: currentToken, email: currentEmail } = getResetParams(
+      window.location.search,
+    );
+
+    if (!currentToken || !currentEmail) {
       setError("Invalid reset link. Please request a new one.");
       return;
     }
@@ -49,32 +113,41 @@ export default function ResetPasswordPage() {
     setError(null);
 
     try {
-      const response = await resetPassword(email, token, data.newPassword);
+      const response = await resetPassword(
+        currentEmail,
+        currentToken,
+        data.newPassword,
+      );
       setMessage(response.message || "Password reset successfully!");
       setTimeout(() => router.push("/login?reset=success"), 3000);
-    } catch (err: any) {
-      setError(err.message || "Failed to reset password. Please try again.");
+    } catch (err) {
+      setError(
+        getApiErrorMessage(
+          err,
+          "Failed to reset password. Please try again.",
+        ),
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (!paramsReady) {
+  if (isValidating) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        Loading...
+        Validating reset link...
       </div>
     );
   }
 
-  if (!token || !email) {
+  if (!token || !email || linkError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-sm p-6 space-y-4 bg-white rounded-lg shadow-md text-center">
           <h2 className="text-xl font-bold text-red-600">Invalid Reset Link</h2>
           <p className="text-sm text-gray-600">
-            The reset link is missing required information. Please request a new
-            one.
+            {linkError ||
+              "The reset link is missing required information. Please request a new one."}
           </p>
           <a
             href="/forgot-password"
@@ -140,9 +213,8 @@ export default function ResetPasswordPage() {
                     value === watch("confirmPassword") ||
                     "Passwords do not match",
                 })}
-                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${
-                  errors.newPassword ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${errors.newPassword ? "border-red-500" : "border-gray-300"
+                  }`}
                 disabled={isSubmitting}
               />
               <button
@@ -152,7 +224,6 @@ export default function ResetPasswordPage() {
                 tabIndex={-1}
               >
                 {showNewPassword ? (
-                  
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
@@ -168,7 +239,6 @@ export default function ResetPasswordPage() {
                     />
                   </svg>
                 ) : (
-                 
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
@@ -215,9 +285,8 @@ export default function ResetPasswordPage() {
                   validate: (value) =>
                     value === watch("newPassword") || "Passwords do not match",
                 })}
-                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${
-                  errors.confirmPassword ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${errors.confirmPassword ? "border-red-500" : "border-gray-300"
+                  }`}
                 disabled={isSubmitting}
               />
               <button
