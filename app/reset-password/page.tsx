@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -13,7 +13,6 @@ type ResetPasswordForm = {
   newPassword: string;
   confirmPassword: string;
 };
-
 
 export default function ResetPasswordPage() {
   return (
@@ -54,34 +53,20 @@ function ResetPasswordContent() {
     formState: { errors },
   } = useForm<ResetPasswordForm>({ mode: "onSubmit" });
 
-  const paramsKeyRef = React.useRef<string | null>(null);
+  // Ref to track the previous token+email combination for reload detection
+  const prevParamsRef = useRef<string | null>(null);
 
+  // Reload the page whenever the token or email changes (except on initial mount)
   useEffect(() => {
-    const getParamsKey = () => {
-      const params = new URLSearchParams(window.location.search);
-      return `${params.get("token") ?? ""}::${params.get("email") ?? ""}`;
-    };
+    const currentKey = `${urlToken ?? ""}::${urlEmail ?? ""}`;
+    if (prevParamsRef.current !== null && prevParamsRef.current !== currentKey) {
+      // URL changed – reload the page completely
+      window.location.href = window.location.href;
+    }
+    prevParamsRef.current = currentKey;
+  }, [urlToken, urlEmail]);
 
-    paramsKeyRef.current = getParamsKey();
-
-    const handleUrlChange = () => {
-      const currentParams = getParamsKey();
-      if (currentParams !== paramsKeyRef.current) {
-        window.location.href = window.location.href;
-      }
-    };
-
-    const intervalId = window.setInterval(handleUrlChange, 250);
-    window.addEventListener("popstate", handleUrlChange);
-    window.addEventListener("hashchange", handleUrlChange);
-
-    return () => {
-      window.clearInterval(intervalId);
-      window.removeEventListener("popstate", handleUrlChange);
-      window.removeEventListener("hashchange", handleUrlChange);
-    };
-  }, []);
-
+  // Lock the token and email from the current URL
   useEffect(() => {
     if (urlToken && urlEmail) {
       setLockedToken(urlToken);
@@ -96,6 +81,7 @@ function ResetPasswordContent() {
     setIsValidating(false);
   }, [urlToken, urlEmail]);
 
+  // Validate the token on the server
   useEffect(() => {
     if (!lockedToken || !lockedEmail) {
       return;
@@ -254,8 +240,9 @@ function ResetPasswordContent() {
                     value === watch("confirmPassword") ||
                     "Passwords do not match",
                 })}
-                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${errors.newPassword ? "border-red-500" : "border-gray-300"
-                  }`}
+                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${
+                  errors.newPassword ? "border-red-500" : "border-gray-300"
+                }`}
                 disabled={isSubmitting}
               />
               <button
@@ -326,8 +313,9 @@ function ResetPasswordContent() {
                   validate: (value) =>
                     value === watch("newPassword") || "Passwords do not match",
                 })}
-                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${errors.confirmPassword ? "border-red-500" : "border-gray-300"
-                  }`}
+                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${
+                  errors.confirmPassword ? "border-red-500" : "border-gray-300"
+                }`}
                 disabled={isSubmitting}
               />
               <button
