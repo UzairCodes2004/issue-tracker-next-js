@@ -14,6 +14,9 @@ export const ENDPOINTS = {
   // User routes
   USERS: "/users",
   USER_BY_ID: (id: string) => `/users/${id}`,
-  AUTH:"/auth"
+  AUTH: "/auth",
 
+  COMMENTS: "/comments",
+  COMMENT_BY_ID: (id: string) => `/comments/${id}`,
+  COMMENTS_BY_ISSUE: (issueID: string) => `/comments/issue/${issueID}`
 };
