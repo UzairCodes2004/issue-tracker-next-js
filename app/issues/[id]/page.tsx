@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getIssueById, updateIssue, deleteIssue, Issue } from '@/app/services/issuesService';
 
-
 export default function IssueDetailPage({
   params,
 }: {
@@ -21,7 +20,6 @@ export default function IssueDetailPage({
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    
     getIssueById(id)
       .then((data) => setIssue(data))
       .catch(() => setError('Failed to load issue.'))
@@ -77,6 +75,47 @@ export default function IssueDetailPage({
 
       {/* Description */}
       <p className="text-slate-600 leading-relaxed mb-6">{issue.description}</p>
+
+      {/* ====== Creator & Last Editor Info Panel ====== */}
+      <div className="mt-4 mb-6 text-xs text-slate-400 space-y-1 border-t border-slate-200/60 pt-4">
+        {/* Creator */}
+        <div className="flex items-center gap-1">
+          <span>Created by</span>
+          <span className="font-medium text-slate-600">{issue.user?.name}</span>
+          <span className="text-slate-300">•</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-slate-500">Role:</span>
+          <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+            {issue.user?.role}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <span className="text-slate-500">Email:</span>
+          <span className="text-slate-600">{issue.user?.email}</span>
+        </div>
+
+        {/* Last Editor – only shown if an editor exists */}
+        {issue.updatedByUser && (
+          <div className="mt-3 pt-2 border-t border-slate-200/60">
+            <div className="flex items-center gap-1">
+              <span>Last edited by</span>
+              <span className="font-medium text-slate-600">{issue.updatedByUser.name}</span>
+              <span className="text-slate-300">•</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-slate-500">Role:</span>
+              <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                {issue.updatedByUser.role}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-slate-500">Email:</span>
+              <span className="text-slate-600">{issue.updatedByUser.email}</span>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Error banner */}
       {error && (
