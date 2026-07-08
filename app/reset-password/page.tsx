@@ -3,12 +3,8 @@
 import React, { Suspense, useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  getApiErrorMessage,
-  resetPassword,
-  validateResetToken,
-} from "../services/usersService";
-
+import {getApiErrorMessage, resetPassword, validateResetToken} from "../services/usersService";
+import { FaEye, FaEyeSlash } from "react-icons/fa"; 
 type ResetPasswordForm = {
   newPassword: string;
   confirmPassword: string;
@@ -32,11 +28,9 @@ function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const urlToken = searchParams.get("token");
-  const urlEmail = searchParams.get("email");
+  const encodedData = searchParams.get("data");
 
-  const [lockedToken, setLockedToken] = useState<string | null>(null);
-  const [lockedEmail, setLockedEmail] = useState<string | null>(null);
+  const [lockedData, setLockedData] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(true);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,41 +47,46 @@ function ResetPasswordContent() {
     formState: { errors },
   } = useForm<ResetPasswordForm>({ mode: "onSubmit" });
 
-
-  // Lock the token and email from the current URL
+  // 1. Reload on data change (client‑side navigation only)
+  const prevDataRef = useRef<string | null>(null);
   useEffect(() => {
-    if (urlToken && urlEmail) {
-      setLockedToken(urlToken);
-      setLockedEmail(urlEmail);
-      setLinkError(null);
-      return;
+    const current = encodedData ?? null;
+    if (prevDataRef.current !== null && prevDataRef.current !== current) {
+      window.location.href = window.location.href;
     }
+    prevDataRef.current = current;
+  }, [encodedData]);
 
-    setLockedToken(null);
-    setLockedEmail(null);
-    setLinkError("Invalid reset link. Please request a new one.");
-    setIsValidating(false);
-  }, [urlToken, urlEmail]);
-
-  // Validate the token on the server
+  // 2. Lock the data and reset validation state
   useEffect(() => {
-    if (!lockedToken || !lockedEmail) {
+    if (encodedData) {
+      setLockedData(encodedData);
+      setLinkError(null);
+    } else {
+      setLockedData(null);
+      setLinkError("Invalid reset link. Please request a new one.");
+      setIsValidating(false);
+    }
+  }, [encodedData]);
+
+  // 3. Validate the token – runs only when lockedData changes
+  useEffect(() => {
+    if (!lockedData) {
+      if (isValidating) setIsValidating(false);
       return;
     }
 
     let cancelled = false;
 
     async function verifyLink() {
-      if (!lockedToken || !lockedEmail) {
-        setLinkError("Invalid reset link. Please request a new one.");
-        setIsValidating(false);
-        return;
-      }
-
       try {
-        await validateResetToken(lockedEmail, lockedToken);
+        const result = await validateResetToken(lockedData!);
         if (!cancelled) {
-          setLinkError(null);
+          if (result.valid) {
+            setLinkError(null);
+          } else {
+            setLinkError("Invalid or expired reset link. Please request a new one.");
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -111,10 +110,11 @@ function ResetPasswordContent() {
     return () => {
       cancelled = true;
     };
-  }, [lockedToken, lockedEmail]);
+  }, [lockedData]);
 
+  // 4. Submit handler
   const onSubmit = async (data: ResetPasswordForm) => {
-    if (!lockedToken || !lockedEmail) {
+    if (!lockedData) {
       setError("Invalid reset link. Please request a new one.");
       return;
     }
@@ -124,15 +124,7 @@ function ResetPasswordContent() {
     setError(null);
 
     try {
-      const checkValid = await validateResetToken(lockedEmail, lockedToken);
-      if (!checkValid) {
-        throw new Error("Invalid link. Try again");
-      }
-      const response = await resetPassword(
-        lockedEmail,
-        lockedToken,
-        data.newPassword,
-      );
+      const response = await resetPassword(lockedData, data.newPassword);
       setMessage(response.message || "Password reset successfully!");
       setTimeout(() => router.push("/login?reset=success"), 3000);
     } catch (err) {
@@ -147,6 +139,7 @@ function ResetPasswordContent() {
     }
   };
 
+  // 5. Render states
   if (isValidating) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -155,7 +148,7 @@ function ResetPasswordContent() {
     );
   }
 
-  if (!lockedToken || !lockedEmail || linkError) {
+  if (!lockedData || linkError) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-sm p-6 space-y-4 bg-white rounded-lg shadow-md text-center">
@@ -189,6 +182,7 @@ function ResetPasswordContent() {
     );
   }
 
+  // 6. Main form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm p-6 space-y-5 bg-white rounded-lg shadow-md">
@@ -206,6 +200,7 @@ function ResetPasswordContent() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* New Password field */}
           <div>
             <label
               htmlFor="newPassword"
@@ -239,42 +234,7 @@ function ResetPasswordContent() {
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"
                 tabIndex={-1}
               >
-                {showNewPassword ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.862-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                )}
+                {showNewPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
             {errors.newPassword && (
@@ -284,6 +244,7 @@ function ResetPasswordContent() {
             )}
           </div>
 
+          {/* Confirm Password field */}
           <div>
             <label
               htmlFor="confirmPassword"
@@ -312,42 +273,7 @@ function ResetPasswordContent() {
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none"
                 tabIndex={-1}
               >
-                {showConfirmPassword ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.862-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
-                )}
+                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
             {errors.confirmPassword && (

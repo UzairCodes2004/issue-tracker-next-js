@@ -60,25 +60,23 @@ export const deleteUser = async (id: string): Promise<User> => {
   const res = await axiosInstance.delete<User>(ENDPOINTS.USER_BY_ID(id));
   return res.data;
 };
-
-export const forgotPassword = async(email:string): Promise<User>=>{
+export const forgotPassword = async (email: string): Promise<User> => {
   const res = await axiosInstance.post<User>(`${ENDPOINTS.AUTH}/forgot-password`, { email });
   return res.data;
-}
+};
 
-export const validateResetToken = async (email: string, token: string) => {
+export const validateResetToken = async (data: string) => {
   const res = await axiosInstance.post(`${ENDPOINTS.AUTH}/validate-reset-token`, {
-    email,
-    token,
+    data,
   });
   return res.data;
 };
 
-export const resetPassword = async (email: string, token: string, newPassword: string) => {
+
+export const resetPassword = async (data: string, newPassword: string) => {
   const res = await axiosInstance.post(`${ENDPOINTS.AUTH}/reset-password`, {
-    email,
-    token,
+    data,
     newPassword,
   });
-  return res.data;
+  return res.data; 
 };
