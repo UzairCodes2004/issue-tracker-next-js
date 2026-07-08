@@ -15,7 +15,7 @@ const Issues = () => {
     queryFn: getIssues,
   });
 
-  
+
   const filteredList = list.filter(i => {
     if (statusFilter === 'ALL') return true;
     return i.status === statusFilter;
@@ -26,12 +26,12 @@ const Issues = () => {
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
-      
-      
+
+
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-slate-800">Tracked Issues</h2>
         <div className="flex items-center gap-3">
-          
+
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -65,11 +65,54 @@ const Issues = () => {
                 <p className="text-sm text-slate-500 line-clamp-2 leading-relaxed">
                   {i.description}
                 </p>
+
+                <div className="mt-2 text-xs text-slate-400 space-y-1">
+                  {/* Creator */}
+                  <div className="flex items-center gap-1">
+                    <span>Created by</span>
+                    <span className="font-medium text-slate-600">{i.user?.name}</span>
+                    <span className="text-slate-300">•</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-slate-500">Role:</span>
+                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                      {i.user?.role}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-slate-500">Email:</span>
+                    <span className="text-slate-600">{i.user?.email}</span>
+                  </div>
+
+                  {/* Last Editor – only shown if an editor exists */}
+
+                  {i.updatedByUser && (
+                    <div className="mt-3 pt-2 border-t border-slate-200/60">
+                      <div className="flex items-center gap-1">
+                        <span>Last edited by</span>
+                        <span className="font-medium text-slate-600">{i.updatedByUser.name}</span>
+                        <span className="text-slate-300">•</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-slate-500">Role:</span>
+                        <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                          {i.updatedByUser.role}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="text-slate-500">Email:</span>
+                        <span className="text-slate-600">{i.updatedByUser.email}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                </div>
+
               </Link>
-              
+
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${i.status === 'OPEN' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                  i.status === 'IN_PROGRESS' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-                    'bg-slate-100 text-slate-600'
+                i.status === 'IN_PROGRESS' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                  'bg-slate-100 text-slate-600'
                 }`}>
                 {i.status.replace('_', ' ')}
               </span>

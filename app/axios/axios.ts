@@ -18,10 +18,13 @@ const axiosInstance = axios.create({
 // Runs BEFORE every request is sent.
 // If a JWT token exists in localStorage, it is automatically added to the
 // Authorization header so we never have to remember to do it manually in each service.
+import { getSession } from "next-auth/react";
+
 axiosInstance.interceptors.request.use(
-  (config) => {
+  async (config) => {
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("token");
+      const session = await getSession();
+      const token = (session as any)?.accessToken; // as defined in your session callback
       if (token) {
         config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
@@ -31,7 +34,6 @@ axiosInstance.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-
 // ─── Response Interceptor ─────────────────────────────────────────────────────
 // Runs AFTER every response comes back.
 // If the server returns 401 (Unauthorized), we clear the stored token and

@@ -4,12 +4,19 @@ import { ENDPOINTS } from "../constants/endpoints";
 
 export type IssueStatus = "OPEN" | "IN_PROGRESS" | "CLOSED";
 
-
+export interface UserBasic{
+  email:string;
+  name:string;
+  role:string
+}
 export interface Issue {
   id: number;
   title: string;
   description: string;
   status: IssueStatus;
+  userID:number;
+  user:UserBasic;
+  updatedByUser:UserBasic|null;
 }
 
 

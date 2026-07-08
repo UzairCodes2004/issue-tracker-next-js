@@ -53,18 +53,6 @@ function ResetPasswordContent() {
     formState: { errors },
   } = useForm<ResetPasswordForm>({ mode: "onSubmit" });
 
-  // Ref to track the previous token+email combination for reload detection
-  const prevParamsRef = useRef<string | null>(null);
-
-  // Reload the page whenever the token or email changes (except on initial mount)
-  useEffect(() => {
-    const currentKey = `${urlToken ?? ""}::${urlEmail ?? ""}`;
-    if (prevParamsRef.current !== null && prevParamsRef.current !== currentKey) {
-      // URL changed – reload the page completely
-      window.location.href = window.location.href;
-    }
-    prevParamsRef.current = currentKey;
-  }, [urlToken, urlEmail]);
 
   // Lock the token and email from the current URL
   useEffect(() => {
