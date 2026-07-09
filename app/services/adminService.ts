@@ -95,19 +95,19 @@ return (await res).data;
 
 
 // GET USER BY ID 
-export const getUserById = async (id:string) :Promise<AdminUser> => {
+export const getUserById = async (id:number) :Promise<AdminUser> => {
     const res= await axiosInstance.get<AdminUser>(ENDPOINTS.ADMIN_USER_BY_ID(id));
     return res.data;
 }
 
-export const updateUserRole = async (id:string,role:UserRole):Promise<AdminUser>=>{
+export const updateUserRole = async (id:number,role:UserRole):Promise<AdminUser>=>{
     const res = 
     axiosInstance.put(ENDPOINTS.ADMIN_USER_ROLE(id),{role});
     return (await res).data;
 }
 
 
-export const deleteUser = async (id: string): Promise<{ id: number; name: string; email: string }> => {
+export const deleteUser = async (id: number): Promise<{ id: number; name: string; email: string }> => {
   const res = await axiosInstance.delete(ENDPOINTS.ADMIN_USER_BY_ID(id));
   return res.data;
 };
@@ -118,17 +118,17 @@ export const getAllIssues = async (): Promise<AdminIssue[]> => {
   return res.data;
 };
 
-export const getAdminIssueById = async (id: string): Promise<AdminIssue> => {
+export const getAdminIssueById = async (id: number): Promise<AdminIssue> => {
   const res = await axiosInstance.get<AdminIssue>(ENDPOINTS.ADMIN_ISSUE_BY_ID(id));
   return res.data;
 };
 
-export const updateAdminIssue = async (id: string, payload: Issue): Promise<AdminIssue> => {
+export const updateAdminIssue = async (id: number,
+  payload: Partial<AdminIssue> ): Promise<AdminIssue> => {
   const res = await axiosInstance.put<AdminIssue>(ENDPOINTS.ADMIN_ISSUE_BY_ID(id), payload);
   return res.data;
 };
-
-export const deleteAdminIssue = async (id: string): Promise<void> => {
+export const deleteAdminIssue = async (id: number): Promise<void> => {
   await axiosInstance.delete(ENDPOINTS.ADMIN_ISSUE_BY_ID(id));
 };
 
@@ -138,6 +138,6 @@ export const getAllComments = async (): Promise<AdminComment[]> => {
   return res.data;
 };
 
-export const deleteAdminComment = async (id: string): Promise<void> => {
+export const deleteAdminComment = async (id: number): Promise<void> => {
   await axiosInstance.delete(ENDPOINTS.ADMIN_COMMENT_BY_ID(id));
 };
