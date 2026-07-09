@@ -4,6 +4,8 @@ import { Button } from '@radix-ui/themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getIssueById, updateIssue, deleteIssue, Issue } from '@/app/services/issuesService';
+import { CommentList } from './comments/CommentList';
+import { CommentForm } from './comments/CommentForm';
 
 export default function IssueDetailPage({
   params,
@@ -18,6 +20,10 @@ export default function IssueDetailPage({
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // ─── Comments state ─────────────────────────────────────────────
+  const [refreshComments, setRefreshComments] = useState(0);
+  const [showComments, setShowComments] = useState(false); // 👈 toggle state
 
   useEffect(() => {
     getIssueById(id)
@@ -36,6 +42,10 @@ export default function IssueDetailPage({
       setShowConfirm(false);
       setError('Failed to delete issue. Please try again.');
     }
+  };
+
+  const handleCommentPosted = () => {
+    setRefreshComments((prev) => prev + 1);
   };
 
   if (loading) {
@@ -77,50 +87,37 @@ export default function IssueDetailPage({
       <p className="text-slate-600 leading-relaxed mb-6">{issue.description}</p>
 
       {/* ====== Creator & Last Editor Info Panel ====== */}
-      <div className="mt-4 mb-6 text-xs text-slate-400 space-y-1 border-t border-slate-200/60 pt-4">
-        {/* Creator */}
-        <div className="flex items-center gap-1">
+      <div className="mt-4 mb-6 text-xs text-slate-400 border-t border-slate-200/60 pt-4">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span>Created by</span>
           <span className="font-medium text-slate-600">{issue.user?.name}</span>
           <span className="text-slate-300">•</span>
-        </div>
-        <div className="flex items-center gap-1">
           <span className="text-slate-500">Role:</span>
           <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
             {issue.user?.role}
           </span>
-        </div>
-        <div className="flex items-center gap-1">
+          <span className="text-slate-300">•</span>
           <span className="text-slate-500">Email:</span>
           <span className="text-slate-600">{issue.user?.email}</span>
         </div>
-
-        {/* Last Editor – only shown if an editor exists */}
         {issue.updatedByUser && (
-          <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <div className="flex items-center gap-1">
-              <span>Last edited by</span>
-              <span className="font-medium text-slate-600">{issue.updatedByUser.name}</span>
-              <span className="text-slate-300">•</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-slate-500">Role:</span>
-              <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
-                {issue.updatedByUser.role}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-slate-500">Email:</span>
-              <span className="text-slate-600">{issue.updatedByUser.email}</span>
-            </div>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 pt-2 border-t border-slate-200/60">
+            <span>Last edited by</span>
+            <span className="font-medium text-slate-600">{issue.updatedByUser.name}</span>
+            <span className="text-slate-300">•</span>
+            <span className="text-slate-500">Role:</span>
+            <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+              {issue.updatedByUser.role}
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="text-slate-500">Email:</span>
+            <span className="text-slate-600">{issue.updatedByUser.email}</span>
           </div>
         )}
       </div>
 
       {/* Error banner */}
-      {error && (
-        <p className="text-red-500 text-sm mb-4">{error}</p>
-      )}
+      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
       {/* Action buttons */}
       <div className="flex gap-3">
@@ -161,6 +158,26 @@ export default function IssueDetailPage({
           </div>
         </div>
       )}
+
+      {/* ==================== Comments Section with Toggle ==================== */}
+      <div className="mt-10 pt-6 border-t border-slate-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-slate-800">Comments</h2>
+          <button
+            onClick={() => setShowComments((prev) => !prev)}
+            className="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+          >
+            {showComments ? 'Hide Comments' : 'Show Comments'}
+          </button>
+        </div>
+
+        {showComments && (
+          <div>
+            <CommentList issueId={Number(id)} refreshTrigger={refreshComments} />
+            <CommentForm issueId={Number(id)} onCommentPosted={handleCommentPosted} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -25,7 +25,7 @@ export interface UpdateComment {
     text: string;
 }
 
-// ✅ All ID params are now `string` to match your other services
+
 export const getCommentsForIssue = async (issueId: string): Promise<Comment[]> => {
     const res = await axiosInstance.get<Comment[]>(ENDPOINTS.COMMENTS_BY_ISSUE(issueId));
     return res.data;
