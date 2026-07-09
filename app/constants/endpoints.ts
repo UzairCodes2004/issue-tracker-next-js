@@ -18,5 +18,15 @@ export const ENDPOINTS = {
 
   COMMENTS: "/comments",
   COMMENT_BY_ID: (id: string) => `/comments/${id}`,
-  COMMENTS_BY_ISSUE: (issueID: string) => `/comments/issue/${issueID}`
+  COMMENTS_BY_ISSUE: (issueID: string) => `/comments/issue/${issueID}`,
+
+  ADMIN: "/admin",
+  ADMIN_STATS: "/admin/stats",
+  ADMIN_USERS: "/admin/users",
+  ADMIN_USER_BY_ID: (id: string) => `/admin/users/${id}`,
+  ADMIN_USER_ROLE: (id: string) => `/admin/users/${id}/role`,
+  ADMIN_ISSUES: "/admin/issues",
+  ADMIN_ISSUE_BY_ID: (id: string) => `/admin/issues/${id}`,
+  ADMIN_COMMENTS: "/admin/comments",
+  ADMIN_COMMENT_BY_ID: (id: string) => `/admin/comments/${id}`,
 };
