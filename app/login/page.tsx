@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { TextField, Button } from "@radix-ui/themes";
 import { useForm } from "react-hook-form";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react"; // 👈 add getSession
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -39,7 +39,16 @@ const LoginPage = () => {
       if (result?.error) {
         setError("Invalid email or password.");
       } else {
-        router.push("/dashboard");
+        // ✅ Get session to check role
+        const session = await getSession();
+        const role = (session?.user as any)?.role;
+
+        // ✅ Redirect based on role
+        if (role === "SUPERADMIN" || role === "MANAGER") {
+          router.push("/admin");
+        } else {
+          router.push("/dashboard");
+        }
         router.refresh();
       }
     } catch (err) {
@@ -82,7 +91,7 @@ const LoginPage = () => {
               type={showPassword ? "text" : "password"}
               placeholder="••••••"
               {...register("password", { required: "Password is required" })}
-              className="w-full pr-10" // space for the eye icon
+              className="w-full pr-10"
             />
             <button
               type="button"
@@ -147,7 +156,7 @@ const LoginPage = () => {
         </button>
 
         <p className="text-sm text-slate-500 mt-2 text-center">
-          Dont have an account?{" "}
+          Don't have an account?{" "}
           <Link href="/register" className="text-indigo-600 hover:underline">
             Register
           </Link>
