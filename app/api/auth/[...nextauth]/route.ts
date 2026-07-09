@@ -86,14 +86,14 @@ const handler = NextAuth({
         token.id = (account as any).userId?.toString();
         token.name = user?.name;
         token.email = user?.email;
-        token.role = (user as any)?.role || "USER"; // 👈 Store role from Google
+        token.role = (user as any)?.role || "USER";
       }
 
       if (account?.provider === "credentials" && user) {
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
-        token.role = (user as any)?.role || "USER"; // 👈 Store role from credentials
+        token.role = (user as any)?.role || "USER"; 
         token.accessToken = (user as any).accessToken;
       }
 
