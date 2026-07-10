@@ -19,9 +19,9 @@ const NavBar = () => {
   }
 
   const isAdmin =
-    (session?.user as any)?.role === "SUPERADMIN" ||
-    (session?.user as any)?.role === "MANAGER";
+    (session?.user as any)?.role === "SUPERADMIN";
 
+       const isManager=(session?.user as any)?.role==="MANAGER";
   // ─── Navigation links ──────────────────────────────────────────────────
   const navLinks = [
     { href: "/dashboard", label: "Dashboard" },
@@ -31,6 +31,11 @@ const NavBar = () => {
   // Add Admin Panel link if user is admin
   if (isAdmin) {
     navLinks.push({ href: "/admin", label: "Admin Panel" });
+  }
+
+  if(isManager)
+  {
+    navLinks.push({href:"/manager",label:"Manager Panel"})
   }
 
   return (
@@ -100,6 +105,13 @@ const NavBar = () => {
                 <DropdownMenu.Item>
                   <Link href="/admin" className="w-full">
                     Admin Panel
+                  </Link>
+                </DropdownMenu.Item>
+              )}
+              {isManager && (
+                <DropdownMenu.Item>
+                  <Link href="/manager" className="w-full">
+                    Manager Panel
                   </Link>
                 </DropdownMenu.Item>
               )}

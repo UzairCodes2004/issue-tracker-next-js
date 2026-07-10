@@ -3,6 +3,7 @@ import React, { useState, useEffect, use } from 'react';
 import { Button } from '@radix-ui/themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react'; // 👈 Add this
 import { getIssueById, updateIssue, deleteIssue, Issue } from '@/app/services/issuesService';
 import { CommentList } from './comments/CommentList';
 import { CommentForm } from './comments/CommentForm';
@@ -14,6 +15,7 @@ export default function IssueDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
+  const { data: session, status } = useSession(); // 👈 Get session
 
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,12 +25,17 @@ export default function IssueDetailPage({
 
   // ─── Comments state ─────────────────────────────────────────────
   const [refreshComments, setRefreshComments] = useState(0);
-  const [showComments, setShowComments] = useState(false); // 👈 toggle state
+  const [showComments, setShowComments] = useState(false);
+
+  // ─── Get user info from session ────────────────────────────────
+  const currentUserId = (session?.user as any)?.id;
+  const userRole = (session?.user as any)?.role;
+  const isManager = userRole === 'MANAGER' || userRole === 'SUPERADMIN';
 
   useEffect(() => {
     getIssueById(id)
       .then((data) => setIssue(data))
-      .catch(() => setError('Failed to load issue.'))
+      .catch(() => setError('You can only see the Details & Edit those Issues which you have created yourself.'))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -59,6 +66,37 @@ export default function IssueDetailPage({
   if (!issue) {
     return <p className="text-slate-500 p-6">Issue not found.</p>;
   }
+
+  // ─── RBAC: Check if user can view this issue ────────────────────────────
+  const isOwner = Number(currentUserId) === issue.userID;
+
+  // If not manager/admin and not owner → show restricted message
+  if (!isManager && !isOwner) {
+    return (
+      <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
+        <Link href="/issues" className="text-sm text-indigo-600 hover:underline mb-4 inline-block">
+          ← Back to Issues
+        </Link>
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="text-6xl mb-4">🔒</div>
+          <h2 className="text-xl font-semibold text-slate-800 mb-2">Access Restricted</h2>
+          <p className="text-slate-500 text-center max-w-sm">
+            You can only view the details of issues you have created.
+          </p>
+          <Link
+            href="/issues"
+            className="mt-4 text-sm text-indigo-600 hover:underline"
+          >
+            Go back to your issues
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Calculate permissions for edit/delete buttons ──────────────────────
+  const canEdit = isOwner || isManager;
+  const canDelete = isOwner || isManager;
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
@@ -119,17 +157,21 @@ export default function IssueDetailPage({
       {/* Error banner */}
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-      {/* Action buttons */}
+      {/* ─── Action buttons (conditional) ────────────────────────────────── */}
       <div className="flex gap-3">
-        <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm">
-          <Link href={`/issues/edit/${id}`}>Edit</Link>
-        </Button>
-        <Button
-          onClick={() => setShowConfirm(true)}
-          className="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm"
-        >
-          Delete
-        </Button>
+        {canEdit && (
+          <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm">
+            <Link href={`/issues/edit/${id}`}>Edit</Link>
+          </Button>
+        )}
+        {canDelete && (
+          <Button
+            onClick={() => setShowConfirm(true)}
+            className="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm"
+          >
+            Delete
+          </Button>
+        )}
       </div>
 
       {/* Confirmation dialog */}

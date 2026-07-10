@@ -44,8 +44,10 @@ const LoginPage = () => {
         const role = (session?.user as any)?.role;
 
         // ✅ Redirect based on role
-        if (role === "SUPERADMIN" || role === "MANAGER") {
+        if (role === "SUPERADMIN") {
           router.push("/admin");
+        } else if (role === "MANAGER") {
+          router.push("/manager");
         } else {
           router.push("/dashboard");
         }
