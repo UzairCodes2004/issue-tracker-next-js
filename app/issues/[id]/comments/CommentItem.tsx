@@ -18,7 +18,7 @@ export function CommentItem({ comment, onDelete, onEdit }: CommentItemProps) {
   const [editText, setEditText] = useState(comment.text);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const currentUserId = (session?.user as any)?.id;
+  const currentUserId = (session?.user)?.id;
   const isOwnComment = currentUserId && Number(currentUserId) === comment.userID;
 
   // ─── Delete ────────────────────────────────────────────────────────────────

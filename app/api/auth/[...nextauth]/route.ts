@@ -1,7 +1,43 @@
-import NextAuth from "next-auth";
+import NextAuth, { Account, Session, User } from "next-auth";
+import { JWT } from "next-auth/jwt"; 
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 import GoogleProvider from "next-auth/providers/google";
+
+// ─── Extended types ────────────────────────────────────────────────────────
+
+interface ExtendedUser extends User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  accessToken: string;
+}
+
+
+interface ExtendedAccount extends Account {
+  accessToken?: string;
+  userId?: string; // Changed from number to string
+}
+
+interface ExtendedJWT extends JWT {
+  id?: string;
+  role?: string;
+  accessToken?: string;
+}
+
+interface ExtendedSession extends Session {
+  user: {
+    id: string;
+    name?: string | null;
+    email?: string | null;
+    role: string;
+    accessToken: string;
+  };
+  accessToken?: string;
+}
+
+// ─── Environment check ─────────────────────────────────────────────────────
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -32,19 +68,24 @@ const handler = NextAuth({
             password: credentials.password,
           });
 
-          
           if (data && data.accessToken) {
             return {
               id: data.userId.toString(),
               name: data.userName,
               email: credentials.email,
-              role: data.role || "USER", 
+              role: data.role || "USER",
               accessToken: data.accessToken,
-            };
+            } as ExtendedUser;
           }
           return null;
-        } catch (error: any) {
-          console.error("Auth error:", error.response?.data || error.message);
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : typeof error === "string"
+              ? error
+              : "Unknown error";
+          console.error("Auth error:", errorMessage);
           return null;
         }
       },
@@ -54,26 +95,35 @@ const handler = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider === "google") {
-        if (!account.id_token) {
+        const googleAccount = account as ExtendedAccount;
+
+        if (!googleAccount.id_token) {
           return false;
         }
 
         try {
           const { data } = await axios.post("http://localhost:5000/auth/google", {
-            idToken: account.id_token,
+            idToken: googleAccount.id_token,
           });
 
-          user.id = data.userId.toString();
-          user.name = data.userName;
-          (user as any).role = data.role || "USER";
-          (user as any).accessToken = data.accessToken;
+          const googleUser = user as ExtendedUser;
+          googleUser.id = data.userId.toString();
+          googleUser.name = data.userName;
+          googleUser.role = data.role || "USER";
+          googleUser.accessToken = data.accessToken;
 
-          (account as any).accessToken = data.accessToken;
-          (account as any).userId = data.userId;
+          googleAccount.accessToken = data.accessToken;
+          googleAccount.userId = data.userId.toString(); 
 
           return true;
-        } catch (err) {
-          console.error("Google sign-in backend error:", err);
+        } catch (err: unknown) {
+          const errorMessage =
+            err instanceof Error
+              ? err.message
+              : typeof err === "string"
+              ? err
+              : "Unknown error";
+          console.error("Google sign-in backend error:", errorMessage);
           return false;
         }
       }
@@ -81,49 +131,60 @@ const handler = NextAuth({
     },
 
     async jwt({ token, user, account, trigger, session }) {
+      const typedToken = token as ExtendedJWT;
+
       if (account?.provider === "google") {
-        token.accessToken = (account as any).accessToken;
-        token.id = (account as any).userId?.toString();
-        token.name = user?.name;
-        token.email = user?.email;
-        token.role = (user as any)?.role || "USER";
+        const googleAccount = account as ExtendedAccount;
+        typedToken.accessToken = googleAccount.accessToken;
+        typedToken.id = googleAccount.userId?.toString();
+        typedToken.name = user?.name;
+        typedToken.email = user?.email;
+        typedToken.role = (user as ExtendedUser)?.role || "USER";
+        return typedToken as JWT; //  Return as JWT
       }
 
       if (account?.provider === "credentials" && user) {
-        token.id = user.id;
-        token.name = user.name;
-        token.email = user.email;
-        token.role = (user as any)?.role || "USER"; 
-        token.accessToken = (user as any).accessToken;
+        const credentialsUser = user as ExtendedUser;
+        typedToken.id = credentialsUser.id;
+        typedToken.name = credentialsUser.name;
+        typedToken.email = credentialsUser.email;
+        typedToken.role = credentialsUser.role || "USER";
+        typedToken.accessToken = credentialsUser.accessToken;
+        return typedToken as JWT; //  Return as JWT
       }
 
       if (trigger === "update" && session) {
-        if (session.name) token.name = session.name;
-        if (session.email) token.email = session.email;
-        if ((session as any).role) token.role = (session as any).role;
+        const updatedSession = session as ExtendedSession;
+        if (updatedSession.user?.name) typedToken.name = updatedSession.user.name;
+        if (updatedSession.user?.email) typedToken.email = updatedSession.user.email;
+        if (updatedSession.user?.role) typedToken.role = updatedSession.user.role;
+        return typedToken as JWT; //  Return as JWT
       }
 
       return token;
     },
 
     async session({ session, token }) {
-      // Expose token fields to session
-      (session as any).accessToken = token.accessToken;
-      if (session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).name = token.name;
-        (session.user as any).email = token.email;
-        (session.user as any).role = token.role;
-        (session.user as any).accessToken = token.accessToken;
-      }
-      return session;
+      const typedToken = token as ExtendedJWT;
+
+      const extendedSession: ExtendedSession = {
+        ...session,
+        user: {
+          ...session.user,
+          id: typedToken.id || "",
+          role: typedToken.role || "USER",
+          accessToken: typedToken.accessToken || "",
+        },
+        accessToken: typedToken.accessToken,
+      };
+
+      return extendedSession;
     },
 
     async redirect({ url, baseUrl }) {
-      // After sign-in, always go to /dashboard by default
       if (url.startsWith(baseUrl)) {
         const path = url.slice(baseUrl.length);
-        if (path === '' || path === '/' || path.startsWith('/login') || path.startsWith('/api/auth')) {
+        if (path === "" || path === "/" || path.startsWith("/login") || path.startsWith("/api/auth")) {
           return `${baseUrl}/dashboard`;
         }
         return url;
@@ -148,25 +209,3 @@ const handler = NextAuth({
 });
 
 export { handler as GET, handler as POST };
-//COMMENTEED THIS AUTHORIZE FUNCTION AS IT WAS PART OF NEXT JS BACKGROUND
-
-
-// async authorize(credentials) {
-//   if (!credentials?.email || !credentials?.password) return null;
-
-//   const user = await prisma.users.findUnique({
-//     where: { email: credentials.email }
-//   });
-
-//   if (!user) return null;
-
-//   const isValid = await bcrypt.compare(credentials.password, user.password);
-
-//   if (!isValid) return null;
-
-//   return {
-//     id: user.id.toString(),
-//     name: user.name,
-//     email: user.email
-//   };
-// } 

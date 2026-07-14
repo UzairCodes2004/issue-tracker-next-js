@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { createUser } from '@/app/services/usersService';
-import { signIn } from 'next-auth/react'; // ✅ import signIn
-
+import { signIn } from 'next-auth/react'; 
+import axios from 'axios';
 interface RegisterForm {
   name: string;
   email: string;
@@ -43,16 +43,20 @@ const RegisterPage = () => {
         
         router.push('/dashboard');
       }
-    } catch (err: any) {
-      setIsSubmitting(false);
-      if (err.response && err.response.data?.error) {
-        setError(err.response.data.error);
-      } else if (err.response && Array.isArray(err.response.data)) {
-        setError(err.response.data[0]?.message || 'Validation failed');
-      } else {
-        setError('An unexpected error occurred. Please try again.');
-      }
+    } catch (err) {
+  setIsSubmitting(false);
+
+  if (axios.isAxiosError(err)) {
+    if (err.response?.data?.error) {
+      setError(err.response.data.error);
+    } else if (Array.isArray(err.response?.data)) {
+      setError(err.response.data[0]?.message || 'Validation failed');
+    } else {
+      setError('An unexpected error occurred. Please try again.');
     }
+  } else {
+    setError('An unexpected error occurred. Please try again.');
+  }}
   };
 
   return (

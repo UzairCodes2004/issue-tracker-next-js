@@ -92,7 +92,7 @@ export default function ManagerLayout({
       return;
     }
 
-    const role = (session.user as any)?.role;
+    const role = (session.user)?.role;
 
     // Only MANAGER can access /manager
     if (role !== "MANAGER") {

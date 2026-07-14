@@ -3,10 +3,19 @@ import React, { useState, useEffect, use } from 'react';
 import { Button } from '@radix-ui/themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react'; // 👈 Add this
+import { useSession } from 'next-auth/react'; 
 import { getIssueById, updateIssue, deleteIssue, Issue } from '@/app/services/issuesService';
 import { CommentList } from './comments/CommentList';
 import { CommentForm } from './comments/CommentForm';
+
+type SessionUser = {
+  id: string;
+  role: string;
+  accessToken: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+};
 
 export default function IssueDetailPage({
   params,
@@ -15,7 +24,7 @@ export default function IssueDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const { data: session, status } = useSession(); // 👈 Get session
+  const { data: session, status } = useSession(); 
 
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,9 +37,10 @@ export default function IssueDetailPage({
   const [showComments, setShowComments] = useState(false);
 
   // ─── Get user info from session ────────────────────────────────
-  const currentUserId = (session?.user as any)?.id;
-  const userRole = (session?.user as any)?.role;
-  const isManager = userRole === 'MANAGER' || userRole === 'SUPERADMIN';
+  const currentUserId = (session?.user as SessionUser)?.id;
+  const userRole = (session?.user as SessionUser)?.role;
+  const isManager = userRole === 'MANAGER';
+  const isAdmin = userRole==='SUPERADMIN'
 
   useEffect(() => {
     getIssueById(id)
@@ -67,11 +77,11 @@ export default function IssueDetailPage({
     return <p className="text-slate-500 p-6">Issue not found.</p>;
   }
 
-  // ─── RBAC: Check if user can view this issue ────────────────────────────
+  // ───  Check if user can view his own issue ────────────────────────────
   const isOwner = Number(currentUserId) === issue.userID;
 
   // If not manager/admin and not owner → show restricted message
-  if (!isManager && !isOwner) {
+  if (!isManager && !isAdmin && !isOwner) {
     return (
       <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
         <Link href="/issues" className="text-sm text-indigo-600 hover:underline mb-4 inline-block">
@@ -95,8 +105,8 @@ export default function IssueDetailPage({
   }
 
   // ─── Calculate permissions for edit/delete buttons ──────────────────────
-  const canEdit = isOwner || isManager;
-  const canDelete = isOwner || isManager;
+  const canEdit = isOwner || isManager|| isAdmin;
+  const canDelete = isOwner || isManager||isAdmin;
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">

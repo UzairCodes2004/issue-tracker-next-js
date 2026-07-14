@@ -6,6 +6,14 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+type SessionUser = {
+  id: string;
+  role: string;
+  accessToken: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+};
 function AdminSidebar() {
   const pathname = usePathname();
 
@@ -87,7 +95,7 @@ export default function AdminLayout({
       router.push("/login");
       return;
     }
-    const role = (session.user as any)?.role;
+    const role = (session.user as SessionUser)?.role;
     if (role !== "SUPERADMIN") {
       router.push("/dashboard");
       return;

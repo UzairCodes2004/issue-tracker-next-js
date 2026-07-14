@@ -19,9 +19,9 @@ const NavBar = () => {
   }
 
   const isAdmin =
-    (session?.user as any)?.role === "SUPERADMIN";
+    (session?.user)?.role === "SUPERADMIN";
 
-       const isManager=(session?.user as any)?.role==="MANAGER";
+       const isManager=(session?.user)?.role==="MANAGER";
   // ─── Navigation links ──────────────────────────────────────────────────
   const navLinks = [
     { href: "/dashboard", label: "Dashboard" },
@@ -95,7 +95,7 @@ const NavBar = () => {
             <DropdownMenu.Content align="end" className="w-48">
               <DropdownMenu.Item>
                 <Link
-                  href={`/users/${(session.user as any).id}`}
+                  href={`/users/${(session.user).id}`}
                   className="w-full"
                 >
                   Profile
