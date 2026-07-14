@@ -1,21 +1,15 @@
 'use client';
+
 import React, { useState, useEffect, use } from 'react';
 import { Button } from '@radix-ui/themes';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react'; 
-import { getIssueById, updateIssue, deleteIssue, Issue } from '@/app/services/issuesService';
+import { getIssueById, deleteIssue, Issue } from '@/app/services/issuesService';
 import { CommentList } from './comments/CommentList';
 import { CommentForm } from './comments/CommentForm';
 
-type SessionUser = {
-  id: string;
-  role: string;
-  accessToken: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-};
+// ─── Import permission hook only ──────────────────────────────────────────
+import { useIssuePermissions } from '../../hooks/useIssuePermissions';
 
 export default function IssueDetailPage({
   params,
@@ -24,7 +18,6 @@ export default function IssueDetailPage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const { data: session, status } = useSession(); 
 
   const [issue, setIssue] = useState<Issue | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,20 +25,18 @@ export default function IssueDetailPage({
   const [deleting, setDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // ─── Comments state ─────────────────────────────────────────────
+  // ─── Comments state ─────────────────────────────────────────────────────
   const [refreshComments, setRefreshComments] = useState(0);
   const [showComments, setShowComments] = useState(false);
 
-  // ─── Get user info from session ────────────────────────────────
-  const currentUserId = (session?.user as SessionUser)?.id;
-  const userRole = (session?.user as SessionUser)?.role;
-  const isManager = userRole === 'MANAGER';
-  const isAdmin = userRole==='SUPERADMIN'
+  // ─── Permissions hook ──────────────────────────────────────────────────
+  // Returns: { canView, canEdit, canDelete, canChangeStatus }
+  const { canView, canEdit, canDelete } = useIssuePermissions(issue);
 
   useEffect(() => {
     getIssueById(id)
       .then((data) => setIssue(data))
-      .catch(() => setError('You can only see the Details & Edit those Issues which you have created yourself.'))
+      .catch(() => setError('Failed to load issue.'))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -77,11 +68,9 @@ export default function IssueDetailPage({
     return <p className="text-slate-500 p-6">Issue not found.</p>;
   }
 
-  // ───  Check if user can view his own issue ────────────────────────────
-  const isOwner = Number(currentUserId) === issue.userID;
-
-  // If not manager/admin and not owner → show restricted message
-  if (!isManager && !isAdmin && !isOwner) {
+  // ─── Access restriction ─────────────────────────────────────────────────
+  // canView = true for: SUPERADMIN, MANAGER, or the issue owner
+  if (!canView) {
     return (
       <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
         <Link href="/issues" className="text-sm text-indigo-600 hover:underline mb-4 inline-block">
@@ -104,9 +93,7 @@ export default function IssueDetailPage({
     );
   }
 
-  // ─── Calculate permissions for edit/delete buttons ──────────────────────
-  const canEdit = isOwner || isManager|| isAdmin;
-  const canDelete = isOwner || isManager||isAdmin;
+  // ─── Render issue details ──────────────────────────────────────────────
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
@@ -134,7 +121,7 @@ export default function IssueDetailPage({
       {/* Description */}
       <p className="text-slate-600 leading-relaxed mb-6">{issue.description}</p>
 
-      {/* ====== Creator & Last Editor Info Panel ====== */}
+      {/* Creator & Last Editor Info Panel */}
       <div className="mt-4 mb-6 text-xs text-slate-400 border-t border-slate-200/60 pt-4">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span>Created by</span>
@@ -211,7 +198,7 @@ export default function IssueDetailPage({
         </div>
       )}
 
-      {/* ==================== Comments Section with Toggle ==================== */}
+      {/* Comments Section with Toggle */}
       <div className="mt-10 pt-6 border-t border-slate-200">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-slate-800">Comments</h2>

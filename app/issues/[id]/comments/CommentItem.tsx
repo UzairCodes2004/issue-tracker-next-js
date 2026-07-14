@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
 import { Comment, updateComment, deleteComment } from "../../../services/commentsService";
-import { id } from "zod/v4/locales";
+
+// ─── Import permission hook ──────────────────────────────────────────────
+import { useCommentPermissions } from "../../../hooks/useCommentPermissions";
 
 interface CommentItemProps {
   comment: Comment;
@@ -12,29 +13,28 @@ interface CommentItemProps {
 }
 
 export function CommentItem({ comment, onDelete, onEdit }: CommentItemProps) {
-  const { data: session } = useSession();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const currentUserId = (session?.user)?.id;
-  const isOwnComment = currentUserId && Number(currentUserId) === comment.userID;
+  // ─── Permission hook ────────────────────────────────────────────────────
+  // Returns: { canEdit, canDelete }
+  const { canEdit, canDelete } = useCommentPermissions(comment);
 
-  // ─── Delete ────────────────────────────────────────────────────────────────
+  // ─── Delete ──────────────────────────────────────────────────────────────
   const handleDelete = async () => {
     if (!confirm("Delete this comment?")) return;
     setIsDeleting(true);
     try {
-        
-        await deleteComment(String(comment.id));
-      onDelete(comment.id); 
+      await deleteComment(String(comment.id));
+      onDelete(comment.id);
     } finally {
       setIsDeleting(false);
     }
   };
 
-  // ─── Edit ──────────────────────────────────────────────────────────────────
+  // ─── Edit ────────────────────────────────────────────────────────────────
   const handleEdit = () => {
     setIsEditing(true);
     setEditText(comment.text);
@@ -65,7 +65,7 @@ export function CommentItem({ comment, onDelete, onEdit }: CommentItemProps) {
     }
   };
 
-  // ─── Render ────────────────────────────────────────────────────────────────
+  // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
     <div className="rounded-lg border border-slate-200 p-4 transition hover:border-slate-300">
@@ -87,21 +87,26 @@ export function CommentItem({ comment, onDelete, onEdit }: CommentItemProps) {
           )}
         </div>
 
-        {isOwnComment && !isEditing && (
+        {/* ─── Action buttons (conditional) ──────────────────────────────── */}
+        {!isEditing && (
           <div className="flex gap-2">
-            <button
-              onClick={handleEdit}
-              className="text-sm text-indigo-600 hover:text-indigo-800"
-            >
-              Edit
-            </button>
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </button>
+            {canEdit && (
+              <button
+                onClick={handleEdit}
+                className="text-sm text-indigo-600 hover:text-indigo-800"
+              >
+                Edit
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -134,9 +139,7 @@ export function CommentItem({ comment, onDelete, onEdit }: CommentItemProps) {
           </div>
         </div>
       ) : (
-        <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">
-          {comment.text}
-        </p>
+        <p className="mt-2 text-sm text-slate-700 whitespace-pre-wrap">{comment.text}</p>
       )}
     </div>
   );

@@ -29,4 +29,12 @@ export const ENDPOINTS = {
   ADMIN_USER_ROLE: (id: string|number) => `/admin/users/${id}/role`,
   ADMIN_ISSUE_BY_ID: (id: string|number) => `/admin/issues/${id}`,
   ADMIN_COMMENT_BY_ID: (id: string|number) => `/admin/comments/${id}`,
+
+    // ─── Manager Requests ──────────────────────────────────────────────────
+  MANAGER_REQUESTS: "/manager-requests",
+  MANAGER_REQUESTS_PENDING: "/manager-requests/pending",
+  MANAGER_REQUESTS_ME: "/manager-requests/me",
+  MANAGER_REQUESTS_USER: (id: number | string) => `/manager-requests/user/${id}`,
+  MANAGER_REQUESTS_REVIEW: (id: number | string) => `/manager-requests/${id}/review`,
+  MANAGER_REQUESTS_STATS: "/manager-requests/stats",
 };

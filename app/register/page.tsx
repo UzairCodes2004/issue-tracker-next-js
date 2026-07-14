@@ -1,63 +1,97 @@
 'use client';
+
 import React, { useState } from 'react';
 import { TextField, Button } from '@radix-ui/themes';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
-import { createUser } from '@/app/services/usersService';
-import { signIn } from 'next-auth/react'; 
+import { registerUser } from '@/app/services/usersService'; // ✅ use registerUser
+import { signIn } from 'next-auth/react';
 import axios from 'axios';
+import { Role } from '../lib/auth/role';
+
 interface RegisterForm {
   name: string;
   email: string;
   password: string;
+  requestedRole: Role;
+  managerReason?: string;
 }
 
 const RegisterPage = () => {
   const router = useRouter();
-  const { register, handleSubmit, formState: { errors } } = useForm<RegisterForm>();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterForm>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const selectedRole = watch('requestedRole');
 
   const onSubmit = async (data: RegisterForm) => {
     try {
       setIsSubmitting(true);
       setError('');
+      setSuccessMessage(null);
 
-      
-      await createUser(data);
-
-      
-      const result = await signIn('credentials', {
+      // 1. Register the user – backend handles manager request if requested
+      const user = await registerUser({
+        name: data.name,
         email: data.email,
         password: data.password,
-        redirect: false, 
+        requestedRole: data.requestedRole,
+        managerReason: data.managerReason,
       });
 
-      if (result?.error) {
-        
-        router.push('/login');
-      } else {
-        
-        router.push('/dashboard');
+      // 2. If they requested MANAGER, show success message (no auto-login)
+      if (data.requestedRole === Role.MANAGER) {
+        setSuccessMessage(
+          'Your account has been created and your manager request is pending approval. You will be notified once a SUPER_ADMIN reviews it.'
+        );
+        setIsSubmitting(false);
+        return;
       }
+       router.push('/login?registered=true');
+      
     } catch (err) {
-  setIsSubmitting(false);
+      setIsSubmitting(false);
 
-  if (axios.isAxiosError(err)) {
-    if (err.response?.data?.error) {
-      setError(err.response.data.error);
-    } else if (Array.isArray(err.response?.data)) {
-      setError(err.response.data[0]?.message || 'Validation failed');
-    } else {
-      setError('An unexpected error occurred. Please try again.');
+      if (axios.isAxiosError(err)) {
+        if (err.response?.data?.error) {
+          setError(err.response.data.error);
+        } else if (Array.isArray(err.response?.data)) {
+          setError(err.response.data[0]?.message || 'Validation failed');
+        } else {
+          setError('An unexpected error occurred. Please try again.');
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
     }
-  } else {
-    setError('An unexpected error occurred. Please try again.');
-  }}
   };
+
+  // ─── Success state – show pending approval message ──────────────────────
+  if (successMessage) {
+    return (
+      <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100 mt-10">
+        <div className="text-center">
+          <div className="text-5xl mb-4">📋</div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">Manager Request Submitted!</h1>
+          <p className="text-slate-600 mb-4">{successMessage}</p>
+          <p className="text-sm text-slate-500">
+            You can log in now with your USER account and check your request status.
+          </p>
+          <Button
+            onClick={() => router.push('/login')}
+            className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg"
+          >
+            Go to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100 mt-10">
@@ -70,6 +104,7 @@ const RegisterPage = () => {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        {/* Name */}
         <div>
           <label className="text-xs font-semibold text-slate-500 block mb-1">Name</label>
           <TextField.Root
@@ -79,6 +114,7 @@ const RegisterPage = () => {
           {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
         </div>
 
+        {/* Email */}
         <div>
           <label className="text-xs font-semibold text-slate-500 block mb-1">Email address</label>
           <TextField.Root
@@ -89,6 +125,7 @@ const RegisterPage = () => {
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
         </div>
 
+        {/* Password */}
         <div>
           <label className="text-xs font-semibold text-slate-500 block mb-1">Password</label>
           <div className="relative">
@@ -112,6 +149,48 @@ const RegisterPage = () => {
           </div>
           {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
         </div>
+
+        {/* ─── Role dropdown ──────────────────────────────────────────────── */}
+        <div>
+          <label className="text-xs font-semibold text-slate-500 block mb-1">
+            Requested Role
+          </label>
+          <select
+            {...register('requestedRole', { required: 'Please select a role' })}
+            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value={Role.USER}>User</option>
+            <option value={Role.MANAGER}>Manager (requires approval)</option>
+          </select>
+          {errors.requestedRole && (
+            <p className="text-red-500 text-xs mt-1">{errors.requestedRole.message}</p>
+          )}
+          <p className="text-xs text-slate-400 mt-1">
+            {selectedRole === Role.MANAGER
+              ? 'Manager role requires approval from a SUPER_ADMIN.'
+              : 'User role grants you standard access.'}
+          </p>
+        </div>
+
+        {/* ─── Manager Reason (only shown if MANAGER selected) ───────────── */}
+        {selectedRole === Role.MANAGER && (
+          <div>
+            <label className="text-xs font-semibold text-slate-500 block mb-1">
+              Why do you want to become a manager?
+            </label>
+            <textarea
+              placeholder="Describe your experience and reasons..."
+              className="w-full rounded-lg border border-slate-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              rows={3}
+              {...register('managerReason', {
+                required: selectedRole === Role.MANAGER ? 'Please provide a reason' : false,
+              })}
+            />
+            {errors.managerReason && (
+              <p className="text-red-500 text-xs mt-1">{errors.managerReason.message}</p>
+            )}
+          </div>
+        )}
 
         <Button type="submit" disabled={isSubmitting} className="mt-2">
           {isSubmitting ? 'Registering...' : 'Register'}

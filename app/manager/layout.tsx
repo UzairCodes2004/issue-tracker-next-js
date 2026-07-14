@@ -7,6 +7,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
+// ─── Import permission hook ──────────────────────────────────────────────
+import { useRole } from "../hooks/useRole";
+
 function ManagerSidebar() {
   const pathname = usePathname();
 
@@ -84,24 +87,27 @@ export default function ManagerLayout({
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    if (status === "loading") return;
+  // ─── Permission hook ──────────────────────────────────────────────────
+  const { isManager, isLoading } = useRole();
 
+  useEffect(() => {
+    // Wait for session to load
+    if (status === "loading" || isLoading) return;
+
+    // Not authenticated → redirect to login
     if (!session) {
       router.push("/login");
       return;
     }
 
-    const role = (session.user)?.role;
-
-    // Only MANAGER can access /manager
-    if (role !== "MANAGER") {
+    // Not MANAGER → redirect to dashboard
+    if (!isManager) {
       router.push("/dashboard");
       return;
     }
-  }, [session, status, router]);
+  }, [session, status, router, isManager, isLoading]);
 
-  if (status === "loading") {
+  if (status === "loading" || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-slate-500">Loading...</div>
@@ -109,7 +115,7 @@ export default function ManagerLayout({
     );
   }
 
-  if (!session) return null;
+  if (!session || !isManager) return null;
 
   return (
     <div className="flex h-screen bg-slate-50">

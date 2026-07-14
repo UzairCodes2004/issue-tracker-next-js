@@ -3,6 +3,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { getIssues, Issue } from '../services/issuesService';
+import { Button } from '@radix-ui/themes';
 
 
 export default function Dashboard() {
@@ -13,7 +14,14 @@ export default function Dashboard() {
   });
 
   if (isLoading) return <p className="text-slate-500 p-6 max-w-xl mx-auto">Loading dashboard...</p>;
-  if (error) return <p className="text-red-500 p-6 max-w-xl mx-auto">Failed to load dashboard statistics.</p>;
+  if (error) return <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-slate-50 border border-slate-100 rounded-xl max-w-xl mx-auto shadow-sm">
+  <p className="text-slate-600 font-medium text-sm sm:text-base">
+    Could'nt Reload Dashboard statistics. As You have not created Any issue. Create An Issue
+  </p>
+  <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 shadow-sm whitespace-nowrap">
+    <Link href="/issues/new">New Issue</Link>
+  </Button>
+</div>;
 
   // Calculate counts
   const issuesArray = Array.isArray(issues) ? issues : [];
@@ -37,7 +45,7 @@ export default function Dashboard() {
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">Summary of current system issues and their progress.</p>
+        <p className="text-sm text-slate-500 mt-1">Summary of users own issues and their progress.</p>
       </div>
 
       {/* Stats Cards */}

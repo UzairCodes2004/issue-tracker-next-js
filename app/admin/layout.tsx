@@ -6,14 +6,9 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type SessionUser = {
-  id: string;
-  role: string;
-  accessToken: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-};
+// ─── Import permission hook ──────────────────────────────────────────────
+import { useRole } from "../hooks/useRole";
+
 function AdminSidebar() {
   const pathname = usePathname();
 
@@ -22,6 +17,7 @@ function AdminSidebar() {
     { href: "/admin/users", label: "Users", icon: "👥" },
     { href: "/admin/issues", label: "Issues", icon: "📋" },
     { href: "/admin/comments", label: "Comments", icon: "💬" },
+     { href: "/admin/manager-requests", label: "Manager Requests", icon: "📋" },
   ];
 
   return (
@@ -36,10 +32,11 @@ function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive
                   ? "bg-indigo-50 text-indigo-700"
                   : "text-slate-600 hover:bg-slate-50"
-                }`}
+              }`}
             >
               <span>{item.icon}</span>
               {item.label}
@@ -89,20 +86,27 @@ export default function AdminLayout({
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  // ─── Permission hook ──────────────────────────────────────────────────
+  const { isSuperAdmin, isLoading } = useRole();
+
   useEffect(() => {
-    if (status === "loading") return;
+    // Wait for session to load
+    if (status === "loading" || isLoading) return;
+
+    // Not authenticated → redirect to login
     if (!session) {
       router.push("/login");
       return;
     }
-    const role = (session.user as SessionUser)?.role;
-    if (role !== "SUPERADMIN") {
+
+    // Not SUPERADMIN → redirect to dashboard
+    if (!isSuperAdmin) {
       router.push("/dashboard");
       return;
     }
-  }, [session, status, router]);
+  }, [session, status, router, isSuperAdmin, isLoading]);
 
-  if (status === "loading") {
+  if (status === "loading" || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-slate-500">Loading...</div>
@@ -110,7 +114,7 @@ export default function AdminLayout({
     );
   }
 
-  if (!session) return null;
+  if (!session || !isSuperAdmin) return null;
 
   return (
     <div className="flex h-screen bg-slate-50">

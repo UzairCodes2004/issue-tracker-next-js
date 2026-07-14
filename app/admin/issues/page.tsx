@@ -10,6 +10,10 @@ export default function AdminIssuesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ─── Confirmation Dialog State ──────────────────────────────────────────
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; title: string } | null>(null);
+
   const loadIssues = () => {
     setLoading(true);
     getAllIssues()
@@ -22,14 +26,23 @@ export default function AdminIssuesPage() {
     loadIssues();
   }, []);
 
-  const handleDelete = async (id: number, title: string) => {
-    if (!confirm(`Delete issue "${title}"?`)) return;
+  // ─── Delete handler (opens confirmation) ────────────────────────────────
+  const handleDelete = (id: number, title: string) => {
+    setDeleteTarget({ id, title });
+    setShowConfirm(true);
+  };
+
+  // ─── Execute delete ──────────────────────────────────────────────────────
+  const executeDelete = async () => {
+    if (!deleteTarget) return;
+    setShowConfirm(false);
     try {
-      await deleteAdminIssue(id);
+      await deleteAdminIssue(deleteTarget.id);
       await loadIssues();
     } catch (err) {
       alert("Failed to delete issue");
     }
+    setDeleteTarget(null);
   };
 
   if (loading) {
@@ -52,7 +65,7 @@ export default function AdminIssuesPage() {
           <div
             key={issue.id}
             className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:border-slate-300 transition cursor-pointer"
-            onClick={() => router.push(`/admin/issues/${issue.id}`)} // 👈 click to detail
+            onClick={() => router.push(`/admin/issues/${issue.id}`)}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -70,7 +83,9 @@ export default function AdminIssuesPage() {
                     {issue.status}
                   </span>
                 </div>
-                <p className="text-sm text-slate-500 mt-1 line-clamp-2">{issue.description}</p>
+                <p className="text-sm text-slate-500 mt-1 line-clamp-2">
+                  {issue.description}
+                </p>
                 <div className="flex gap-4 mt-2 text-xs text-slate-400">
                   <span>By: {issue.user?.name || "Unknown"}</span>
                   <span>•</span>
@@ -97,6 +112,36 @@ export default function AdminIssuesPage() {
           </div>
         ))}
       </div>
+
+      {/* ─── Confirmation Card (overlay) ──────────────────────────────────── */}
+      {showConfirm && deleteTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
+            <h2 className="text-lg font-semibold text-slate-800 mb-2">Delete Issue</h2>
+            <p className="text-slate-500 text-sm mb-6">
+              Are you sure you want to delete <strong>"{deleteTarget.title}"</strong>?
+              This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowConfirm(false);
+                  setDeleteTarget(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors duration-150"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors duration-150"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

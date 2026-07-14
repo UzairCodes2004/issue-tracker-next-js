@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { getAdminUsers, updateUserRole, deleteUser, AdminUser } from "../../services/adminService";
 
-type UserRole = "USER" | "MANAGER" | "SUPERADMIN";
+// ─── Import centralized role definitions ──────────────────────────────────
+import { Role, getAllRoles, getRoleLabel } from "../../lib/auth/role";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -17,7 +18,7 @@ export default function AdminUsersPage() {
     type: "role" | "delete";
     userId: number;
     userName: string;
-    newRole?: UserRole;
+    newRole?: Role;
   } | null>(null);
 
   const loadUsers = () => {
@@ -33,7 +34,7 @@ export default function AdminUsersPage() {
   }, []);
 
   // ─── Role change handler (opens confirmation) ────────
-  const handleRoleChange = (userId: number, newRole: UserRole, userName: string) => {
+  const handleRoleChange = (userId: number, newRole: Role, userName: string) => {
     setConfirmAction({
       type: "role",
       userId,
@@ -82,6 +83,9 @@ export default function AdminUsersPage() {
     setConfirmAction(null);
   };
 
+  // ─── Get all roles for the dropdown ──────────────────────────────────────
+  const allRoles = getAllRoles();
+
   if (loading) {
     return <div className="text-slate-500">Loading users...</div>;
   }
@@ -129,16 +133,18 @@ export default function AdminUsersPage() {
                     onChange={(e) =>
                       handleRoleChange(
                         user.id,
-                        e.target.value as UserRole,
+                        e.target.value as Role,
                         user.name
                       )
                     }
                     disabled={updating === user.id}
                     className="text-sm border border-slate-200 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    <option value="USER">User</option>
-                    <option value="MANAGER">Manager</option>
-                    <option value="SUPERADMIN">Super Admin</option>
+                    {allRoles.map((role) => (
+                      <option key={role} value={role}>
+                        {getRoleLabel(role)}
+                      </option>
+                    ))}
                   </select>
                 </td>
                 <td className="px-4 py-3 text-sm text-slate-500">{user.registered}</td>
@@ -167,7 +173,7 @@ export default function AdminUsersPage() {
                 </h2>
                 <p className="text-slate-500 text-sm mb-6">
                   Are you sure you want to change <strong>{confirmAction.userName}</strong>'s
-                  role to <strong>{confirmAction.newRole}</strong>?
+                  role to <strong>{getRoleLabel(confirmAction.newRole!)}</strong>?
                 </p>
               </>
             ) : (

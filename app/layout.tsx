@@ -4,7 +4,7 @@ import "./globals.css";
 import "@radix-ui/themes/styles.css";
 import NavBar from "./NavBar";
 import { Theme } from "@radix-ui/themes";
-import AuthProvider from "./auth/AuthProvider";
+import AuthProvider from "./lib/auth/AuthProvider";
 import QueryClientProvider from "./QueryClientProvider";
 
 const geistSans = Geist({

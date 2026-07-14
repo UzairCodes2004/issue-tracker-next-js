@@ -8,34 +8,36 @@ import { FaBug, FaBars, FaTimes } from "react-icons/fa";
 import { Avatar, DropdownMenu } from "@radix-ui/themes";
 import "@radix-ui/themes/styles.css";
 
+// ─── Import permission hooks ──────────────────────────────────────────────
+import { useRole } from "./hooks/useRole";
+
 const NavBar = () => {
   const pathname = usePathname();
   const { status, data: session } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // ─── Permission hooks ──────────────────────────────────────────────────
+  const { isSuperAdmin, isManager } = useRole();
+
   // ─── HIDE on admin routes ──────────────────────────────────────────────
-  if (pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/manager")) {
     return null;
   }
 
-  const isAdmin =
-    (session?.user)?.role === "SUPERADMIN";
-
-       const isManager=(session?.user)?.role==="MANAGER";
   // ─── Navigation links ──────────────────────────────────────────────────
   const navLinks = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/issues", label: "Issues" },
   ];
 
-  // Add Admin Panel link if user is admin
-  if (isAdmin) {
+  // ✅ Add Admin Panel link if user is SUPERADMIN
+  if (isSuperAdmin) {
     navLinks.push({ href: "/admin", label: "Admin Panel" });
   }
 
-  if(isManager)
-  {
-    navLinks.push({href:"/manager",label:"Manager Panel"})
+  // ✅ Add Manager Panel link if user is MANAGER
+  if (isManager) {
+    navLinks.push({ href: "/manager", label: "Manager Panel" });
   }
 
   return (
@@ -55,11 +57,10 @@ const NavBar = () => {
           <li key={href}>
             <Link
               href={href}
-              className={`relative pb-1 transition-colors ${
-                pathname === href || pathname.startsWith(href + "/")
+              className={`relative pb-1 transition-colors ${pathname === href || pathname.startsWith(href + "/")
                   ? "text-indigo-600"
                   : "text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               {label}
               {pathname === href && (
@@ -94,20 +95,26 @@ const NavBar = () => {
             </DropdownMenu.Trigger>
             <DropdownMenu.Content align="end" className="w-48">
               <DropdownMenu.Item>
-                <Link
-                  href={`/users/${(session.user).id}`}
-                  className="w-full"
-                >
+                <Link href={`/users/${session.user.id}`} className="w-full">
                   Profile
                 </Link>
               </DropdownMenu.Item>
-              {isAdmin && (
+              <DropdownMenu.Item>
+                <Link href="/manager-request-status" className="w-full">
+                  Manager Request Status
+                </Link>
+              </DropdownMenu.Item>
+
+              {/* ✅ Admin Panel link in dropdown */}
+              {isSuperAdmin && (
                 <DropdownMenu.Item>
                   <Link href="/admin" className="w-full">
                     Admin Panel
                   </Link>
                 </DropdownMenu.Item>
               )}
+
+              {/* ✅ Manager Panel link in dropdown */}
               {isManager && (
                 <DropdownMenu.Item>
                   <Link href="/manager" className="w-full">
@@ -115,6 +122,7 @@ const NavBar = () => {
                   </Link>
                 </DropdownMenu.Item>
               )}
+
               <DropdownMenu.Separator />
               <DropdownMenu.Item
                 color="red"
@@ -168,11 +176,10 @@ const NavBar = () => {
               <li key={href}>
                 <Link
                   href={href}
-                  className={`block py-2 px-3 rounded-lg transition-colors ${
-                    pathname === href || pathname.startsWith(href + "/")
+                  className={`block py-2 px-3 rounded-lg transition-colors ${pathname === href || pathname.startsWith(href + "/")
                       ? "bg-indigo-50 text-indigo-600"
                       : "text-gray-600 hover:bg-gray-50"
-                  }`}
+                    }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {label}
