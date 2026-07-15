@@ -39,7 +39,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role?: string;             // 👈 added (backend now returns role)
+  role?: string;            
   resetToken?: string;
   tokenExpireAt?: string;
 }
@@ -66,8 +66,7 @@ export const createUser = async (user: UserPayload): Promise<User> => {
 
 // ─── NEW: Registration endpoint (calls /users/register) ──────────────────
 export const registerUser = async (payload: RegisterPayload): Promise<User> => {
-  
-  const res = await axiosInstance.post<User>(`${ENDPOINTS.USERS}`, payload);
+  const res = await axiosInstance.post<User>(`${ENDPOINTS.USERS}/register`, payload);
   return res.data;
 };
 
@@ -89,10 +88,11 @@ export const forgotPassword = async (email: string): Promise<User> => {
   return res.data;
 };
 
-export const validateResetToken = async (data: string) => {
-  const res = await axiosInstance.post(`${ENDPOINTS.AUTH}/validate-reset-token`, {
-    data,
-  });
+export const validateResetToken = async (data: string): Promise<{ valid: boolean; email?: string }> => {
+  const res = await axiosInstance.post<{ valid: boolean; email?: string }>(
+    `${ENDPOINTS.AUTH}/validate-reset-token`,
+    { data }
+  );
   return res.data;
 };
 

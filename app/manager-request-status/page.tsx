@@ -106,7 +106,7 @@ export default function ManagerRequestStatusPage() {
   const getStatusMessage = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "Your request is waiting for review by a SUPER_ADMIN. You'll receive a notification once it's reviewed.";
+        return "Your request is waiting for review by a Super Admin. You can review you request at manager request status.";
       case "APPROVED":
         return "Congratulations! Your request has been approved. You now have MANAGER access.";
       case "REJECTED":

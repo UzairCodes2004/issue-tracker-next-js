@@ -9,6 +9,7 @@ import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { registerUser } from '@/app/services/usersService'; // ✅ use registerUser
 import { signIn } from 'next-auth/react';
 import axios from 'axios';
+import { formatApiError } from '../utils/error-utils';
 import { Role } from '../lib/auth/role';
 
 interface RegisterForm {
@@ -47,7 +48,7 @@ const RegisterPage = () => {
       // 2. If they requested MANAGER, show success message (no auto-login)
       if (data.requestedRole === Role.MANAGER) {
         setSuccessMessage(
-          'Your account has been created and your manager request is pending approval. You will be notified once a SUPER_ADMIN reviews it.'
+          'Your account has been created and your manager request is pending approval. You will be notified once a Super Admin reviews it.'
         );
         setIsSubmitting(false);
         return;
@@ -55,20 +56,9 @@ const RegisterPage = () => {
        router.push('/login?registered=true');
       
     } catch (err) {
-      setIsSubmitting(false);
-
-      if (axios.isAxiosError(err)) {
-        if (err.response?.data?.error) {
-          setError(err.response.data.error);
-        } else if (Array.isArray(err.response?.data)) {
-          setError(err.response.data[0]?.message || 'Validation failed');
-        } else {
-          setError('An unexpected error occurred. Please try again.');
-        }
-      } else {
-        setError('An unexpected error occurred. Please try again.');
-      }
-    }
+  setIsSubmitting(false);
+  setError(formatApiError(err));
+}
   };
 
   // ─── Success state – show pending approval message ──────────────────────
@@ -167,7 +157,7 @@ const RegisterPage = () => {
           )}
           <p className="text-xs text-slate-400 mt-1">
             {selectedRole === Role.MANAGER
-              ? 'Manager role requires approval from a SUPER_ADMIN.'
+              ? 'Manager role requires approval from a Super Admin.'
               : 'User role grants you standard access.'}
           </p>
         </div>

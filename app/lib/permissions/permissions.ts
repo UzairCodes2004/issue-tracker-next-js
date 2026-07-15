@@ -63,10 +63,7 @@ export const canDeleteComment = (user: User, comment: Comment): boolean => {
 
 // ─── Manager Request Permissions ────────────────────────────────────────
 
-export const canCreateManagerRequest = (user: User): boolean => {
-    // Anyone can create a manager request (including USER)
-    return true;
-};
+
 
 export const canViewManagerRequests = (user: User): boolean => {
     // Only SUPERADMIN can view all requests

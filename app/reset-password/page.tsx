@@ -3,8 +3,11 @@
 import React, { Suspense, useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
-import {getApiErrorMessage, resetPassword, validateResetToken} from "../services/usersService";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; 
+import { getApiErrorMessage, resetPassword, validateResetToken } from "../services/usersService";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { formatApiError } from "../utils/error-utils";
+
+
 type ResetPasswordForm = {
   newPassword: string;
   confirmPassword: string;
@@ -31,6 +34,7 @@ function ResetPasswordContent() {
   const encodedData = searchParams.get("data");
 
   const [lockedData, setLockedData] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null); // 👈 NEW
   const [isValidating, setIsValidating] = useState(true);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +51,6 @@ function ResetPasswordContent() {
     formState: { errors },
   } = useForm<ResetPasswordForm>({ mode: "onSubmit" });
 
-  // 1. Reload on data change (client‑side navigation only)
   const prevDataRef = useRef<string | null>(null);
   useEffect(() => {
     const current = encodedData ?? null;
@@ -57,7 +60,6 @@ function ResetPasswordContent() {
     prevDataRef.current = current;
   }, [encodedData]);
 
-  // 2. Lock the data and reset validation state
   useEffect(() => {
     if (encodedData) {
       setLockedData(encodedData);
@@ -69,7 +71,6 @@ function ResetPasswordContent() {
     }
   }, [encodedData]);
 
-  // 3. Validate the token – runs only when lockedData changes
   useEffect(() => {
     if (!lockedData) {
       if (isValidating) setIsValidating(false);
@@ -84,6 +85,7 @@ function ResetPasswordContent() {
         if (!cancelled) {
           if (result.valid) {
             setLinkError(null);
+            setUserEmail(result.email || null); // 👈 Capture email
           } else {
             setLinkError("Invalid or expired reset link. Please request a new one.");
           }
@@ -91,10 +93,7 @@ function ResetPasswordContent() {
       } catch (err) {
         if (!cancelled) {
           setLinkError(
-            getApiErrorMessage(
-              err,
-              "Invalid or expired reset link. Please request a new one.",
-            ),
+            formatApiError(err, "Invalid or expired reset link.")
           );
         }
       } finally {
@@ -112,7 +111,6 @@ function ResetPasswordContent() {
     };
   }, [lockedData]);
 
-  // 4. Submit handler
   const onSubmit = async (data: ResetPasswordForm) => {
     if (!lockedData) {
       setError("Invalid reset link. Please request a new one.");
@@ -139,7 +137,6 @@ function ResetPasswordContent() {
     }
   };
 
-  // 5. Render states
   if (isValidating) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -154,13 +151,9 @@ function ResetPasswordContent() {
         <div className="w-full max-w-sm p-6 space-y-4 bg-white rounded-lg shadow-md text-center">
           <h2 className="text-xl font-bold text-red-600">Invalid Reset Link</h2>
           <p className="text-sm text-gray-600">
-            {linkError ||
-              "The reset link is missing required information. Please request a new one."}
+            {linkError || "The reset link is missing required information. Please request a new one."}
           </p>
-          <a
-            href="/forgot-password"
-            className="text-sm text-blue-600 hover:underline"
-          >
+          <a href="/forgot-password" className="text-sm text-blue-600 hover:underline">
             Request new reset link
           </a>
         </div>
@@ -172,9 +165,7 @@ function ResetPasswordContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-sm p-6 space-y-4 bg-white rounded-lg shadow-md text-center">
-          <h2 className="text-xl font-bold text-green-600">
-            Password Reset Successful
-          </h2>
+          <h2 className="text-xl font-bold text-green-600">Password Reset Successful</h2>
           <p className="text-sm text-gray-600">{message}</p>
           <p className="text-xs text-gray-500">Redirecting to login...</p>
         </div>
@@ -182,14 +173,21 @@ function ResetPasswordContent() {
     );
   }
 
-  // 6. Main form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm p-6 space-y-5 bg-white rounded-lg shadow-md">
         <h2 className="text-xl font-bold text-center text-gray-800">
           Create New Password
         </h2>
-        <p className="text-center text-sm text-gray-600">
+
+        {/* 👇 NEW – Display email */}
+        {userEmail && (
+          <p className="text-center text-sm text-gray-600">
+            Reset password for <strong className="text-blue-600">{userEmail}</strong>
+          </p>
+        )}
+
+        <p className="text-center text-sm text-gray-500">
           Enter your new password below.
         </p>
 
@@ -200,12 +198,8 @@ function ResetPasswordContent() {
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* New Password field */}
           <div>
-            <label
-              htmlFor="newPassword"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
               New Password
             </label>
             <div className="relative mt-1">
@@ -220,12 +214,10 @@ function ResetPasswordContent() {
                     message: "Password must be at least 6 characters",
                   },
                   validate: (value) =>
-                    value === watch("confirmPassword") ||
-                    "Passwords do not match",
+                    value === watch("confirmPassword") || "Passwords do not match",
                 })}
-                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${
-                  errors.newPassword ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${errors.newPassword ? "border-red-500" : "border-gray-300"
+                  }`}
                 disabled={isSubmitting}
               />
               <button
@@ -238,18 +230,12 @@ function ResetPasswordContent() {
               </button>
             </div>
             {errors.newPassword && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.newPassword.message}
-              </p>
+              <p className="mt-1 text-xs text-red-600">{errors.newPassword.message}</p>
             )}
           </div>
 
-          {/* Confirm Password field */}
           <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
               Confirm Password
             </label>
             <div className="relative mt-1">
@@ -262,9 +248,8 @@ function ResetPasswordContent() {
                   validate: (value) =>
                     value === watch("newPassword") || "Passwords do not match",
                 })}
-                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${
-                  errors.confirmPassword ? "border-red-500" : "border-gray-300"
-                }`}
+                className={`block w-full px-3 py-1.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm pr-10 ${errors.confirmPassword ? "border-red-500" : "border-gray-300"
+                  }`}
                 disabled={isSubmitting}
               />
               <button
@@ -277,9 +262,7 @@ function ResetPasswordContent() {
               </button>
             </div>
             {errors.confirmPassword && (
-              <p className="mt-1 text-xs text-red-600">
-                {errors.confirmPassword.message}
-              </p>
+              <p className="mt-1 text-xs text-red-600">{errors.confirmPassword.message}</p>
             )}
           </div>
 

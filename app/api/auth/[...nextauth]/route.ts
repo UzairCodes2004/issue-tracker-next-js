@@ -1,5 +1,5 @@
 import NextAuth, { Account, Session, User } from "next-auth";
-import { JWT } from "next-auth/jwt"; 
+import { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import axios from "axios";
 import GoogleProvider from "next-auth/providers/google";
@@ -14,10 +14,9 @@ interface ExtendedUser extends User {
   accessToken: string;
 }
 
-
 interface ExtendedAccount extends Account {
   accessToken?: string;
-  userId?: string; // Changed from number to string
+  userId?: string;
 }
 
 interface ExtendedJWT extends JWT {
@@ -60,7 +59,9 @@ const handler = NextAuth({
       },
 
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
         try {
           const { data } = await axios.post("http://localhost:5000/auth/login", {
@@ -78,15 +79,9 @@ const handler = NextAuth({
             } as ExtendedUser;
           }
           return null;
-        } catch (error: unknown) {
-          const errorMessage =
-            error instanceof Error
-              ? error.message
-              : typeof error === "string"
-              ? error
-              : "Unknown error";
-          console.error("Auth error:", errorMessage);
-          return null;
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null; // ✅ Always return null on error
         }
       },
     }),
@@ -113,17 +108,11 @@ const handler = NextAuth({
           googleUser.accessToken = data.accessToken;
 
           googleAccount.accessToken = data.accessToken;
-          googleAccount.userId = data.userId.toString(); 
+          googleAccount.userId = data.userId.toString();
 
           return true;
-        } catch (err: unknown) {
-          const errorMessage =
-            err instanceof Error
-              ? err.message
-              : typeof err === "string"
-              ? err
-              : "Unknown error";
-          console.error("Google sign-in backend error:", errorMessage);
+        } catch (error) {
+          console.error("Google sign-in error:", error);
           return false;
         }
       }
@@ -140,7 +129,7 @@ const handler = NextAuth({
         typedToken.name = user?.name;
         typedToken.email = user?.email;
         typedToken.role = (user as ExtendedUser)?.role || "USER";
-        return typedToken as JWT; //  Return as JWT
+        return typedToken as JWT;
       }
 
       if (account?.provider === "credentials" && user) {
@@ -150,7 +139,7 @@ const handler = NextAuth({
         typedToken.email = credentialsUser.email;
         typedToken.role = credentialsUser.role || "USER";
         typedToken.accessToken = credentialsUser.accessToken;
-        return typedToken as JWT; //  Return as JWT
+        return typedToken as JWT;
       }
 
       if (trigger === "update" && session) {
@@ -158,7 +147,7 @@ const handler = NextAuth({
         if (updatedSession.user?.name) typedToken.name = updatedSession.user.name;
         if (updatedSession.user?.email) typedToken.email = updatedSession.user.email;
         if (updatedSession.user?.role) typedToken.role = updatedSession.user.role;
-        return typedToken as JWT; //  Return as JWT
+        return typedToken as JWT;
       }
 
       return token;
