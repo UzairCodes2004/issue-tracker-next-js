@@ -100,7 +100,7 @@ const NavBar = () => {
                 </Link>
               </DropdownMenu.Item>
               <DropdownMenu.Item>
-                <Link href="/manager-request-status" className="w-full">
+                <Link href="/manager-request-status" className="py-1 w-full">
                   Manager Request Status
                 </Link>
               </DropdownMenu.Item>

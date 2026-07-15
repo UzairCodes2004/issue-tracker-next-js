@@ -126,12 +126,7 @@ function ResetPasswordContent() {
       setMessage(response.message || "Password reset successfully!");
       setTimeout(() => router.push("/login?reset=success"), 3000);
     } catch (err) {
-      setError(
-        getApiErrorMessage(
-          err,
-          "Failed to reset password. Please try again.",
-        ),
-      );
+      setError(formatApiError(err, "You cannot enter the your current forgotten password. Set a new Password."))
     } finally {
       setIsSubmitting(false);
     }
