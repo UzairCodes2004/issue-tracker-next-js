@@ -89,35 +89,36 @@ const handler = NextAuth({
 
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === "google") {
-        const googleAccount = account as ExtendedAccount;
+  if (account?.provider === "google") {
+    const googleAccount = account as ExtendedAccount;
 
-        if (!googleAccount.id_token) {
-          return false;
-        }
+    if (!googleAccount.id_token) {
+      return false;
+    }
 
-        try {
-          const { data } = await axios.post("http://localhost:5000/auth/google", {
-            idToken: googleAccount.id_token,
-          });
+    try {
+      const { data } = await axios.post("http://localhost:5000/auth/google", {
+        idToken: googleAccount.id_token,
+      });
 
-          const googleUser = user as ExtendedUser;
-          googleUser.id = data.userId.toString();
-          googleUser.name = data.userName;
-          googleUser.role = data.role || "USER";
-          googleUser.accessToken = data.accessToken;
+      const googleUser = user as ExtendedUser;
+      googleUser.id = data.userId.toString();
+      googleUser.name = data.userName;
+      googleUser.role = data.role || "USER";
+      googleUser.accessToken = data.accessToken;
+      googleUser.registered = "GOOGLE_OAUTH"; 
 
-          googleAccount.accessToken = data.accessToken;
-          googleAccount.userId = data.userId.toString();
+      googleAccount.accessToken = data.accessToken;
+      googleAccount.userId = data.userId.toString();
 
-          return true;
-        } catch (error) {
-          console.error("Google sign-in error:", error);
-          return false;
-        }
-      }
       return true;
-    },
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+      return false;
+    }
+  }
+  return true;
+},
 
     async jwt({ token, user, account, trigger, session }) {
       const typedToken = token as ExtendedJWT;
@@ -129,6 +130,7 @@ const handler = NextAuth({
         typedToken.name = user?.name;
         typedToken.email = user?.email;
         typedToken.role = (user as ExtendedUser)?.role || "USER";
+        typedToken.registered = (user as ExtendedUser)?.registered || "GOOGLE_OAUTH"; 
         return typedToken as JWT;
       }
 
@@ -139,6 +141,7 @@ const handler = NextAuth({
         typedToken.email = credentialsUser.email;
         typedToken.role = credentialsUser.role || "USER";
         typedToken.accessToken = credentialsUser.accessToken;
+        typedToken.registered = credentialsUser.registered || "CREDENTIALS";
         return typedToken as JWT;
       }
 
@@ -198,3 +201,4 @@ const handler = NextAuth({
 });
 
 export { handler as GET, handler as POST };
+

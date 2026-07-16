@@ -1,8 +1,8 @@
 import axiosInstance from "../axios/axios";
 import { ENDPOINTS } from "../constants/endpoints";
 import { isAxiosError } from "axios";
-import { Role } from "../lib/auth/role"; 
 
+// ─── Error helper ──────────────────────────────────────────────────────────
 
 export function getApiErrorMessage(error: unknown, fallback: string): string {
   if (isAxiosError(error)) {
@@ -27,19 +27,17 @@ export interface UserPayload {
   email: string;
   password: string;
 }
-
-// Extended payload for registration (includes role request)
+// ✅ This extends UserPayload with the extra fields
 export interface RegisterPayload extends UserPayload {
-  requestedRole?: Role;      
-  managerReason?: string;   
+  requestedRole?: 'USER' | 'MANAGER';
+  managerReason?: string; 
 }
-
 export interface User {
   message?: string;
   id: number;
   name: string;
   email: string;
-  role?: string;            
+  role?: string;
   resetToken?: string;
   tokenExpireAt?: string;
 }
@@ -56,20 +54,13 @@ export const getUserById = async (id: string): Promise<User> => {
   return res.data;
 };
 
-// 
-// This function calls the generic POST /users – not for registration.
-// Keep it if you have other user creation needs, but registration should use registerUser.
-export const createUser = async (user: UserPayload): Promise<User> => {
-  const res = await axiosInstance.post<User>(ENDPOINTS.USERS, user);
-  return res.data;
-};
-
-// ─── NEW: Registration endpoint (calls /users/register) ──────────────────
-export const registerUser = async (payload: RegisterPayload): Promise<User> => {
+// ─── Registration endpoint ────────────────────────────────────────────────
+export const registerUser = async (payload: UserPayload): Promise<User> => {
   const res = await axiosInstance.post<User>(`${ENDPOINTS.USERS}/register`, payload);
   return res.data;
 };
 
+// ─── Update user ───────────────────────────────────────────────────────────
 export const updateUser = async (
   id: string,
   updatedUser: Partial<UserPayload>
@@ -82,6 +73,8 @@ export const deleteUser = async (id: string): Promise<User> => {
   const res = await axiosInstance.delete<User>(ENDPOINTS.USER_BY_ID(id));
   return res.data;
 };
+
+// ─── Password Reset ────────────────────────────────────────────────────────
 
 export const forgotPassword = async (email: string): Promise<User> => {
   const res = await axiosInstance.post<User>(`${ENDPOINTS.AUTH}/forgot-password`, { email });

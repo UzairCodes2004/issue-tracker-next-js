@@ -3,8 +3,18 @@
 import { useEffect, useState } from "react";
 import { getAdminUsers, updateUserRole, deleteUser, AdminUser } from "../../services/adminService";
 
-// ─── Import centralized role definitions ──────────────────────────────────
-import { Role, getAllRoles, getRoleLabel } from "../../lib/auth/role";
+// ─── Define roles locally (no import from deleted file) ──────────────────
+const ROLES = ["USER", "MANAGER", "SUPERADMIN"] as const;
+type Role = (typeof ROLES)[number];
+
+const ROLE_LABELS: Record<Role, string> = {
+  USER: "User",
+  MANAGER: "Manager",
+  SUPERADMIN: "Super Admin",
+};
+
+const getAllRoles = (): Role[] => [...ROLES];
+const getRoleLabel = (role: Role): string => ROLE_LABELS[role] || role;
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);

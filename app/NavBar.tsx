@@ -9,6 +9,7 @@ import { Avatar, DropdownMenu } from "@radix-ui/themes";
 import "@radix-ui/themes/styles.css";
 
 // ─── Import permission hooks ──────────────────────────────────────────────
+import { usePermissions } from "./hooks/usePermissions";
 import { useRole } from "./hooks/useRole";
 
 const NavBar = () => {
@@ -17,7 +18,8 @@ const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // ─── Permission hooks ──────────────────────────────────────────────────
-  const { isSuperAdmin, isManager } = useRole();
+  const { canAccessAdminPanel, canAccessManagerPanel } = usePermissions();
+  const { isManager, isSuperAdmin, isUser } = useRole(); // 👈 Add isUser
 
   // ─── HIDE on admin routes ──────────────────────────────────────────────
   if (pathname.startsWith("/admin") || pathname.startsWith("/manager")) {
@@ -30,12 +32,12 @@ const NavBar = () => {
     { href: "/issues", label: "Issues" },
   ];
 
-  // ✅ Add Admin Panel link if user is SUPERADMIN
-  if (isSuperAdmin) {
+  // ✅ Admin Panel – only SUPERADMIN
+  if (canAccessAdminPanel) {
     navLinks.push({ href: "/admin", label: "Admin Panel" });
   }
 
-  // ✅ Add Manager Panel link if user is MANAGER
+  // ✅ Manager Panel – only MANAGER (not SUPERADMIN)
   if (isManager) {
     navLinks.push({ href: "/manager", label: "Manager Panel" });
   }
@@ -57,10 +59,11 @@ const NavBar = () => {
           <li key={href}>
             <Link
               href={href}
-              className={`relative pb-1 transition-colors ${pathname === href || pathname.startsWith(href + "/")
+              className={`relative pb-1 transition-colors ${
+                pathname === href || pathname.startsWith(href + "/")
                   ? "text-indigo-600"
                   : "text-gray-600 hover:text-gray-900"
-                }`}
+              }`}
             >
               {label}
               {pathname === href && (
@@ -99,14 +102,18 @@ const NavBar = () => {
                   Profile
                 </Link>
               </DropdownMenu.Item>
-              <DropdownMenu.Item>
-                <Link href="/manager-request-status" className="py-1 w-full">
-                  Manager Request Status
-                </Link>
-              </DropdownMenu.Item>
+
+              {/* ✅ Manager Request Status – only for regular USERs (not MANAGER or SUPERADMIN) */}
+              {isUser && (
+                <DropdownMenu.Item>
+                  <Link href="/manager-request-status" className="py-1 w-full">
+                    Manager Request Status
+                  </Link>
+                </DropdownMenu.Item>
+              )}
 
               {/* ✅ Admin Panel link in dropdown */}
-              {isSuperAdmin && (
+              {canAccessAdminPanel && (
                 <DropdownMenu.Item>
                   <Link href="/admin" className="w-full">
                     Admin Panel
@@ -114,7 +121,7 @@ const NavBar = () => {
                 </DropdownMenu.Item>
               )}
 
-              {/* ✅ Manager Panel link in dropdown */}
+              {/* ✅ Manager Panel link in dropdown – only MANAGER */}
               {isManager && (
                 <DropdownMenu.Item>
                   <Link href="/manager" className="w-full">
@@ -176,10 +183,11 @@ const NavBar = () => {
               <li key={href}>
                 <Link
                   href={href}
-                  className={`block py-2 px-3 rounded-lg transition-colors ${pathname === href || pathname.startsWith(href + "/")
+                  className={`block py-2 px-3 rounded-lg transition-colors ${
+                    pathname === href || pathname.startsWith(href + "/")
                       ? "bg-indigo-50 text-indigo-600"
                       : "text-gray-600 hover:bg-gray-50"
-                    }`}
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {label}

@@ -37,4 +37,7 @@ export const ENDPOINTS = {
   MANAGER_REQUESTS_USER: (id: number | string) => `/manager-requests/user/${id}`,
   MANAGER_REQUESTS_REVIEW: (id: number | string) => `/manager-requests/${id}/review`,
   MANAGER_REQUESTS_STATS: "/manager-requests/stats",
+
+    // ─── Permissions ──────────────────────────────────────────────────────────
+  PERMISSIONS_ME: "/auth/permissions/me",
 };

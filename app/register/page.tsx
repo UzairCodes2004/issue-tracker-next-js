@@ -6,17 +6,17 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
-import { registerUser } from '@/app/services/usersService'; // ✅ use registerUser
-import { signIn } from 'next-auth/react';
-import axios from 'axios';
+import { RegisterPayload, registerUser } from '@/app/services/usersService';
 import { formatApiError } from '../utils/error-utils';
-import { Role } from '../lib/auth/role';
+
+// ─── Local type (no import from role.ts) ──────────────────────────────
+type RequestedRole = 'USER' | 'MANAGER';
 
 interface RegisterForm {
   name: string;
   email: string;
   password: string;
-  requestedRole: Role;
+  requestedRole: RequestedRole;
   managerReason?: string;
 }
 
@@ -36,29 +36,32 @@ const RegisterPage = () => {
       setError('');
       setSuccessMessage(null);
 
-      // 1. Register the user – backend handles manager request if requested
-      const user = await registerUser({
+      // Register the user – backend will create manager request if requested
+      await registerUser({
         name: data.name,
         email: data.email,
         password: data.password,
         requestedRole: data.requestedRole,
-        managerReason: data.managerReason,
-      });
+        ...(data.requestedRole === 'MANAGER' && data.managerReason
+          ? { managerReason: data.managerReason }
+          : {}),
+      }as RegisterPayload);
 
-      // 2. If they requested MANAGER, show success message (no auto-login)
-      if (data.requestedRole === Role.MANAGER) {
+      // If they requested MANAGER, show success message (no auto-login)
+      if (data.requestedRole === 'MANAGER') {
         setSuccessMessage(
-          'Your account has been created and your manager request is pending approval. You will be notified once a Super Admin reviews it.'
+          'Your account has been created and your manager request is pending approval.'
         );
         setIsSubmitting(false);
         return;
       }
-       router.push('/login?registered=true');
-      
+
+      // Regular USER – redirect to login
+      router.push('/login?registered=true');
     } catch (err) {
-  setIsSubmitting(false);
-  setError(formatApiError(err));
-}
+      setIsSubmitting(false);
+      setError(formatApiError(err));
+    }
   };
 
   // ─── Success state – show pending approval message ──────────────────────
@@ -124,7 +127,7 @@ const RegisterPage = () => {
               placeholder="••••••"
               {...register('password', {
                 required: 'Password is required',
-                minLength: { value: 6, message: 'Password must be at least 6 characters' }
+                minLength: { value: 6, message: 'Password must be at least 6 characters' },
               })}
               className="w-full pr-10"
             />
@@ -149,31 +152,31 @@ const RegisterPage = () => {
             {...register('requestedRole', { required: 'Please select a role' })}
             className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            <option value={Role.USER}>User</option>
-            <option value={Role.MANAGER}>Manager (requires approval)</option>
+            <option value="USER">User</option>
+            <option value="MANAGER">Manager (requires approval)</option>
           </select>
           {errors.requestedRole && (
             <p className="text-red-500 text-xs mt-1">{errors.requestedRole.message}</p>
           )}
           <p className="text-xs text-slate-400 mt-1">
-            {selectedRole === Role.MANAGER
+            {selectedRole === 'MANAGER'
               ? 'Manager role requires approval from a Super Admin.'
               : 'User role grants you standard access.'}
           </p>
         </div>
 
         {/* ─── Manager Reason (only shown if MANAGER selected) ───────────── */}
-        {selectedRole === Role.MANAGER && (
+        {selectedRole === 'MANAGER' && (
           <div>
             <label className="text-xs font-semibold text-slate-500 block mb-1">
-              Why do you want to become a manager?
+              Why do you want to become a manager? <span className="text-red-500">*</span>
             </label>
             <textarea
               placeholder="Describe your experience and reasons..."
               className="w-full rounded-lg border border-slate-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               rows={3}
               {...register('managerReason', {
-                required: selectedRole === Role.MANAGER ? 'Please provide a reason' : false,
+                required: selectedRole === 'MANAGER' ? 'Please provide a reason' : false,
               })}
             />
             {errors.managerReason && (

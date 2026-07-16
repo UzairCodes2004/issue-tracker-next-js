@@ -64,11 +64,16 @@ export default function ManagerRequestStatusPage() {
   if (requests.length === 0) {
     return (
       <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
+        <div className="flex items-center gap-2 mb-4">
+          <Link href="/dashboard" className="text-sm text-indigo-600 hover:underline">
+            ← Back to Dashboard
+          </Link>
+        </div>
         <h1 className="text-2xl font-bold text-slate-800 mb-4">Manager Request Status</h1>
         <div className="text-center py-8">
           <div className="text-5xl mb-4">📋</div>
           <h2 className="text-lg font-semibold text-slate-700 mb-2">No Manager Request Found</h2>
-          
+          {/* <p className="text-sm text-slate-500">You haven't submitted any manager requests yet.</p> */}
         </div>
       </div>
     );
@@ -106,7 +111,7 @@ export default function ManagerRequestStatusPage() {
   const getStatusMessage = (status: string) => {
     switch (status) {
       case "PENDING":
-        return "Your request is waiting for review by a Super Admin. You can review you request at manager request status.";
+        return "Your request is waiting for review by a Super Admin. You can review your request at manager request status.";
       case "APPROVED":
         return "Congratulations! Your request has been approved. You now have MANAGER access.";
       case "REJECTED":
@@ -118,13 +123,17 @@ export default function ManagerRequestStatusPage() {
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
+      
       <h1 className="text-2xl font-bold text-slate-800 mb-4">Manager Request Status</h1>
 
       {/* Status Card */}
-      <div className={`rounded-lg border p-6 ${latestRequest.status === "PENDING" ? "border-yellow-200 bg-yellow-50" :
-          latestRequest.status === "APPROVED" ? "border-green-200 bg-green-50" :
-          "border-red-200 bg-red-50"
-        }`}>
+      <div className={`rounded-lg border p-6 ${
+        latestRequest.status === "PENDING"
+          ? "border-yellow-200 bg-yellow-50"
+          : latestRequest.status === "APPROVED"
+          ? "border-green-200 bg-green-50"
+          : "border-red-200 bg-red-50"
+      }`}>
         <div className="flex items-center gap-3 mb-3">
           <span className="text-3xl">{getStatusEmoji(latestRequest.status)}</span>
           <div>
@@ -162,7 +171,7 @@ export default function ManagerRequestStatusPage() {
             </p>
           )}
         </div>
-      </div>
+      </div> 
 
       {/* History of previous requests */}
       {requests.length > 1 && (
@@ -185,11 +194,7 @@ export default function ManagerRequestStatusPage() {
 
       {/* Action buttons */}
       <div className="mt-6 flex gap-3">
-        
-        <Link
-          href="/dashboard"
-          className="text-sm text-slate-500 hover:text-slate-700"
-        >
+        <Link href="/dashboard" className="text-sm text-slate-500 hover:text-slate-700">
           ← Back to Dashboard
         </Link>
       </div>

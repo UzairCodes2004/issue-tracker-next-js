@@ -1,11 +1,10 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react"; // 👈 Add signOut
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react"; // 👈 Add useState
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
 
 // ─── Import permission hook ──────────────────────────────────────────────
 import { useRole } from "../hooks/useRole";
@@ -50,12 +49,6 @@ function ManagerSidebar() {
         >
           ← Back to App
         </Link>
-        <button
-          onClick={() => signOut({ callbackUrl: "/" })}
-          className="block w-full text-left text-sm text-red-500 hover:text-red-700"
-        >
-          Logout
-        </button>
       </div>
     </aside>
   );
@@ -63,19 +56,63 @@ function ManagerSidebar() {
 
 function ManagerHeader() {
   const { data: session } = useSession();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await signOut({ callbackUrl: "/" });
+    setIsLoggingOut(false);
+  };
 
   return (
-    <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
-      <h2 className="text-lg font-semibold text-slate-800">Manager Dashboard</h2>
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-slate-600">
-          {session?.user?.name || "Manager"}
-        </span>
-        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-          MANAGER
-        </span>
-      </div>
-    </header>
+    <>
+      <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+        <h2 className="text-lg font-semibold text-slate-800">Manager Dashboard</h2>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-slate-600">
+            {session?.user?.name || "Manager"}
+          </span>
+          <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+            MANAGER
+          </span>
+          {/* ─── Logout Button ───────────────────────────────────────────── */}
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            className="text-sm text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+          >
+            Logout
+          </button>
+        </div>
+      </header>
+
+      {/* ─── Logout Confirmation Modal ────────────────────────────────────── */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
+            <h2 className="text-lg font-semibold text-slate-800 mb-2">Logout?</h2>
+            <p className="text-slate-500 text-sm mb-6">
+              Are you sure you want to logout of your account?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors duration-150"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors duration-150 disabled:opacity-50"
+              >
+                {isLoggingOut ? "Logging out..." : "Yes, Logout"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
