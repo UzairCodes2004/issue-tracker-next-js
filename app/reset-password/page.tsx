@@ -3,7 +3,7 @@
 import React, { Suspense, useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getApiErrorMessage, resetPassword, validateResetToken } from "../services/usersService";
+import { resetPassword, validateResetToken } from "../services/usersService";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { formatApiError } from "../utils/error-utils";
 
@@ -34,7 +34,7 @@ function ResetPasswordContent() {
   const encodedData = searchParams.get("data");
 
   const [lockedData, setLockedData] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null); // 👈 NEW
+  const [userEmail, setUserEmail] = useState<string | null>(null); //  NEW
   const [isValidating, setIsValidating] = useState(true);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);

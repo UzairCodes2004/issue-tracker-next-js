@@ -23,27 +23,22 @@ const NavBar = () => {
 
   const isAuthenticated = status === "authenticated";
 
-  // ─── HIDE on admin routes ──────────────────────────────────────────────
-  if (pathname.startsWith("/admin") || pathname.startsWith("/manager")) {
-    return null;
-  }
+  // ─── HIDE on login / register pages (optional) ──────────────────────
+ 
 
   // ─── Navigation links ──────────────────────────────────────────────────
   const navLinks = [];
 
-  // Only show Dashboard and Issues when authenticated
   if (isAuthenticated) {
     navLinks.push(
       { href: "/dashboard", label: "Dashboard" },
       { href: "/issues", label: "Issues" }
     );
 
-    //  Admin Panel – only SUPERADMIN
     if (canAccessAdminPanel) {
       navLinks.push({ href: "/admin", label: "Admin Panel" });
     }
 
-    //  Manager Panel – only MANAGER (not SUPERADMIN)
     if (isManager) {
       navLinks.push({ href: "/manager", label: "Manager Panel" });
     }
@@ -110,7 +105,7 @@ const NavBar = () => {
                 </Link>
               </DropdownMenu.Item>
 
-              {/* ✅ Manager Request Status – only for regular USERs */}
+              {/* Manager Request Status – only for regular USERs */}
               {isUser && (
                 <DropdownMenu.Item>
                   <Link href="/manager-request-status" className="py-1 w-full">
@@ -119,7 +114,7 @@ const NavBar = () => {
                 </DropdownMenu.Item>
               )}
 
-              {/* ✅ Admin Panel link in dropdown */}
+              {/* Admin Panel link – SUPERADMIN only */}
               {canAccessAdminPanel && (
                 <DropdownMenu.Item>
                   <Link href="/admin" className="w-full">
@@ -128,7 +123,7 @@ const NavBar = () => {
                 </DropdownMenu.Item>
               )}
 
-              {/* ✅ Manager Panel link in dropdown – only MANAGER */}
+              {/* Manager Panel link – MANAGER only */}
               {isManager && (
                 <DropdownMenu.Item>
                   <Link href="/manager" className="w-full">
@@ -138,6 +133,7 @@ const NavBar = () => {
               )}
 
               <DropdownMenu.Separator />
+
               <DropdownMenu.Item
                 color="red"
                 onClick={() => signOut({ callbackUrl: "/" })}

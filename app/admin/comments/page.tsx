@@ -1,12 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getAllComments, deleteAdminComment, AdminComment } from "../../services/adminService";
 
 export default function AdminCommentsPage() {
+  const router = useRouter();
   const [comments, setComments] = useState<AdminComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // ─── Confirmation Dialog State ──────────────────────────────────────────
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; text: string } | null>(null);
 
   const loadComments = () => {
     setLoading(true);
@@ -20,14 +26,27 @@ export default function AdminCommentsPage() {
     loadComments();
   }, []);
 
-  const handleDelete = async (id: number, text: string) => {
-    if (!confirm(`Delete comment: "${text.slice(0, 50)}..."?`)) return;
+  // ─── Delete handler ──────────────────────────────────────────────────────
+  const handleDelete = (id: number, text: string) => {
+    setDeleteTarget({ id, text });
+    setShowConfirm(true);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteTarget) return;
+    setShowConfirm(false);
     try {
-      await deleteAdminComment(id);
+      await deleteAdminComment(deleteTarget.id);
       await loadComments();
     } catch (err) {
       alert("Failed to delete comment");
     }
+    setDeleteTarget(null);
+  };
+
+  // ─── Navigate to detail ─────────────────────────────────────────────────
+  const handleCardClick = (id: number) => {
+    router.push(`/admin/comments/${id}`);
   };
 
   if (loading) {
@@ -49,7 +68,8 @@ export default function AdminCommentsPage() {
         {comments.map((comment) => (
           <div
             key={comment.id}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:border-slate-300 transition"
+            className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:border-slate-300 transition cursor-pointer"
+            onClick={() => handleCardClick(comment.id)} // 👈 Click whole card
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -66,10 +86,15 @@ export default function AdminCommentsPage() {
                     {new Date(comment.createdAT).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-sm text-slate-600 mt-1">{comment.text}</p>
+                <p className="text-sm text-slate-600 mt-1 line-clamp-2">
+                  {comment.text}
+                </p>
               </div>
               <button
-                onClick={() => handleDelete(comment.id, comment.text)}
+                onClick={(e) => {
+                  e.stopPropagation(); // 👈 Prevent card click
+                  handleDelete(comment.id, comment.text);
+                }}
                 className="text-sm text-red-500 hover:text-red-700 ml-4"
               >
                 Delete
@@ -78,6 +103,39 @@ export default function AdminCommentsPage() {
           </div>
         ))}
       </div>
+
+      {/* ─── Confirmation Modal ──────────────────────────────────────────── */}
+      {showConfirm && deleteTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
+            <h2 className="text-lg font-semibold text-slate-800 mb-2">Delete Comment?</h2>
+            <p className="text-slate-500 text-sm mb-6">
+              Are you sure you want to delete this comment?
+            </p>
+            <div className="bg-slate-50 rounded-lg p-3 mb-4 text-sm text-slate-600 border border-slate-200">
+              "{deleteTarget.text.slice(0, 100)}
+              {deleteTarget.text.length > 100 ? "..." : ""}"
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowConfirm(false);
+                  setDeleteTarget(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

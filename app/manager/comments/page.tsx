@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getAllComments, deleteAdminComment, AdminComment } from "../../services/adminService";
+import { formatApiError } from "../../utils/error-utils";
 
 export default function ManagerCommentsPage() {
+  const router = useRouter();
   const [comments, setComments] = useState<AdminComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,13 +27,11 @@ export default function ManagerCommentsPage() {
     loadComments();
   }, []);
 
-  // ─── Delete handler (opens confirmation) ────────────────────────────────
   const handleDelete = (id: number, text: string) => {
     setDeleteTarget({ id, text });
     setShowConfirm(true);
   };
 
-  // ─── Execute delete ──────────────────────────────────────────────────────
   const executeDelete = async () => {
     if (!deleteTarget) return;
     setShowConfirm(false);
@@ -41,6 +42,10 @@ export default function ManagerCommentsPage() {
       alert("Failed to delete comment");
     }
     setDeleteTarget(null);
+  };
+
+  const handleCardClick = (id: number) => {
+    router.push(`/manager/comments/${id}`);
   };
 
   if (loading) {
@@ -62,7 +67,8 @@ export default function ManagerCommentsPage() {
         {comments.map((comment) => (
           <div
             key={comment.id}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:border-slate-300 transition"
+            className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 hover:border-slate-300 transition cursor-pointer"
+            onClick={() => handleCardClick(comment.id)}
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -79,10 +85,15 @@ export default function ManagerCommentsPage() {
                     {new Date(comment.createdAT).toLocaleDateString()}
                   </span>
                 </div>
-                <p className="text-sm text-slate-600 mt-1">{comment.text}</p>
+                <p className="text-sm text-slate-600 mt-1 line-clamp-2">
+                  {comment.text}
+                </p>
               </div>
               <button
-                onClick={() => handleDelete(comment.id, comment.text)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(comment.id, comment.text);
+                }}
                 className="text-sm text-red-500 hover:text-red-700 ml-4"
               >
                 Delete
@@ -92,11 +103,10 @@ export default function ManagerCommentsPage() {
         ))}
       </div>
 
-      {/* ─── Confirmation Card (overlay) ──────────────────────────────────── */}
       {showConfirm && deleteTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full mx-4">
-            <h2 className="text-lg font-semibold text-slate-800 mb-2">Delete Comment</h2>
+            <h2 className="text-lg font-semibold text-slate-800 mb-2">Delete Comment?</h2>
             <p className="text-slate-500 text-sm mb-6">
               Are you sure you want to delete this comment?
             </p>
@@ -110,13 +120,13 @@ export default function ManagerCommentsPage() {
                   setShowConfirm(false);
                   setDeleteTarget(null);
                 }}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors duration-150"
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 border border-slate-200 rounded-lg hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 onClick={executeDelete}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors duration-150"
+                className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg"
               >
                 Yes, Delete
               </button>

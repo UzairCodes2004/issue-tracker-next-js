@@ -137,7 +137,12 @@ export const getAllComments = async (): Promise<AdminComment[]> => {
   const res = await axiosInstance.get<AdminComment[]>(ENDPOINTS.ADMIN_COMMENTS);
   return res.data;
 };
+// app/services/adminService.ts
 
+export const getAdminCommentById = async (id: number): Promise<AdminComment> => {
+  const res = await axiosInstance.get<AdminComment>(ENDPOINTS.ADMIN_COMMENT_BY_ID(id));
+  return res.data;
+};
 export const deleteAdminComment = async (id: number): Promise<void> => {
   await axiosInstance.delete(ENDPOINTS.ADMIN_COMMENT_BY_ID(id));
 };
