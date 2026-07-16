@@ -5,9 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { getUserById, deleteUser } from '../../services/usersService';
-import { createManagerRequest } from '../../services/managerRequestService';
+import {
+  createManagerRequest,
+  getMyManagerRequests,
+  ManagerRequest,
+} from '../../services/managerRequestService';
 import { useSession } from 'next-auth/react';
-import { usePermissions } from '../../hooks/usePermissions'; // 👈 Use permissions hook
+import { usePermissions } from '../../hooks/usePermissions';
 import { formatApiError } from '../../utils/error-utils';
 
 type UserProfile = {
@@ -25,7 +29,7 @@ export default function UserProfilePage({
   const { id } = use(params);
   const router = useRouter();
   const { data: session } = useSession();
-  const { canAccessManagerPanel } = usePermissions(); // 👈 Get permission
+  const { canAccessManagerPanel } = usePermissions();
 
   const [user, setUser] = useState<UserProfile>();
   const [loading, setLoading] = useState(true);
@@ -34,6 +38,7 @@ export default function UserProfilePage({
   const [showConfirm, setShowConfirm] = useState(false);
 
   // ─── Manager Request State ──────────────────────────────────────────────
+  const [existingRequest, setExistingRequest] = useState<ManagerRequest | null>(null);
   const [showManagerForm, setShowManagerForm] = useState(false);
   const [managerReason, setManagerReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,13 +48,33 @@ export default function UserProfilePage({
   const isOwnProfile = session?.user?.id === id;
   const isGoogleUser = session?.user?.registered === 'GOOGLE_OAUTH';
 
-  // Load user profile
+  // ─── Load user profile ──────────────────────────────────────────────────
   useEffect(() => {
     getUserById(id)
       .then((data) => setUser(data))
       .catch(() => setError('Failed to load profile.'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // ─── Load existing manager request (only for own profile) ──────────────
+  useEffect(() => {
+    if (!isOwnProfile) return;
+
+    const fetchRequest = async () => {
+      try {
+        const requests = await getMyManagerRequests();
+        if (requests.length > 0) {
+          setExistingRequest(requests[0]); // take the most recent one
+        } else {
+          setExistingRequest(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch manager request:', err);
+      }
+    };
+
+    fetchRequest();
+  }, [isOwnProfile]);
 
   const handleDelete = async () => {
     try {
@@ -83,6 +108,9 @@ export default function UserProfilePage({
       setManagerSuccess('Manager request submitted successfully! It is now pending approval.');
       setManagerReason('');
       setShowManagerForm(false);
+      // Refresh the request status
+      const requests = await getMyManagerRequests();
+      setExistingRequest(requests[0] || null);
     } catch (err) {
       setManagerError(formatApiError(err, 'Failed to submit manager request.'));
     } finally {
@@ -101,6 +129,32 @@ export default function UserProfilePage({
   if (!user) {
     return <p className="text-slate-500 p-6">User not found.</p>;
   }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+      case 'APPROVED':
+        return 'bg-green-100 text-green-800 border border-green-200';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800 border border-red-200';
+      default:
+        return 'bg-slate-100 text-slate-700';
+    }
+  };
+
+  const getStatusMessage = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'Your manager request is pending approval. You can check the status on your profile.';
+      case 'APPROVED':
+        return '✅ Your request has been approved! You now have MANAGER access.';
+      case 'REJECTED':
+        return '❌ Your request has been rejected.';
+      default:
+        return '';
+    }
+  };
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded-xl shadow-md border border-slate-100">
@@ -130,11 +184,36 @@ export default function UserProfilePage({
         </div>
       </div>
 
-      {/* ─── Apply for Manager (Only Google users, own profile, not already manager) ─── */}
-      {/* ✅ Uses permission from backend instead of role check */}
+      {/* ─── Manager Request Section (Only Google users, own profile, not already manager) ─── */}
       {isOwnProfile && isGoogleUser && !canAccessManagerPanel && (
         <div className="border-t border-slate-200 pt-4 mb-6">
-          {!showManagerForm ? (
+          {/* If an existing request exists, show its status */}
+          {existingRequest ? (
+            <div className={`rounded-lg border p-4 ${getStatusBadge(existingRequest.status)}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">
+                  {existingRequest.status === 'PENDING' && '⏳'}
+                  {existingRequest.status === 'APPROVED' && '✅'}
+                  {existingRequest.status === 'REJECTED' && '❌'}
+                </span>
+                <span className="font-semibold">Manager Request:</span>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-sm font-medium ${getStatusBadge(existingRequest.status)}`}>
+                  {existingRequest.status}
+                </span>
+              </div>
+              <p className="text-sm mt-1">{getStatusMessage(existingRequest.status)}</p>
+              {existingRequest.notes && (
+                <p className="text-xs text-slate-500 mt-1">
+                  <strong>Reason:</strong> {existingRequest.notes}
+                </p>
+              )}
+              {existingRequest.reviewedAt && (
+                <p className="text-xs text-slate-400 mt-1">
+                  Reviewed on: {new Date(existingRequest.reviewedAt).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          ) : !showManagerForm ? (
             <button
               onClick={() => setShowManagerForm(true)}
               className="w-full py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors duration-200"

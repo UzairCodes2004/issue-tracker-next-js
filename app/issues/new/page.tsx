@@ -1,8 +1,9 @@
 'use client';
-import { TextField, TextArea, Button } from '@radix-ui/themes';
+
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { TextField, TextArea, Button } from '@radix-ui/themes';
 import { createIssue } from '@/app/services/issuesService';
 
 interface IssueForm {
@@ -12,47 +13,65 @@ interface IssueForm {
 
 const NewIssuePage = () => {
   const router = useRouter();
-  const {register,handleSubmit,formState: { errors, isSubmitting }} = useForm<IssueForm>({
-    mode: 'onSubmit', 
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<IssueForm>({
+    mode: 'onSubmit',
+    defaultValues: { title: '', description: '' },
   });
 
   const onSubmit = async (data: IssueForm) => {
+    setSubmitError(null);
     try {
       await createIssue(data);
       router.push('/issues');
     } catch (error) {
       console.error('Failed to submit issue:', error);
-      // Optionally set a global error state here
+      setSubmitError('Failed to create issue. Please try again.');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-xl space-y-4">
-      <div>
-        <TextField.Root
-          placeholder="Title"
-          {...register('title', { required: 'Title is required' })}
-        />
-        {errors.title && (
-          <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
-        )}
-      </div>
+    <div className="max-w-xl mx-auto">
+      <h1 className="text-2xl font-bold text-slate-800 mb-6">Create New Issue</h1>
 
-      <div>
-        <TextArea
-          placeholder="Description"
-          className="my-5"
-          {...register('description', { required: 'Description is required' })}
-        />
-        {errors.description && (
-          <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
-        )}
-      </div>
+      {submitError && (
+        <p className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-lg border border-red-200">
+          {submitError}
+        </p>
+      )}
 
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? 'Submitting...' : 'Submit New Issue'}
-      </Button>
-    </form>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div>
+          <TextField.Root
+            placeholder="Title"
+            {...register('title', { required: 'Title is required' })}
+          />
+          {errors.title && (
+            <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+          )}
+        </div>
+
+        <div>
+          <TextArea
+            placeholder="Description"
+            className="my-5"
+            {...register('description', { required: 'Description is required' })}
+          />
+          {errors.description && (
+            <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+          )}
+        </div>
+
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Submitting...' : 'Submit New Issue'}
+        </Button>
+      </form>
+    </div>
   );
 };
 

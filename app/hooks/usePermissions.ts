@@ -1,18 +1,27 @@
 import { useMemo } from 'react';
-import { useRole } from './useRole';
+import { useSession } from 'next-auth/react';
 
 export const usePermissions = () => {
-  const { role, permissions, hasPermission, isLoading, isAuthenticated } = useRole();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+
+  const permissions = user?.permissions || [];
+  const role = user?.role || 'USER';
+
+  // Helper to check a specific permission (string)
+  const hasPermission = (permission: string): boolean => {
+    return permissions.includes(permission);
+  };
 
   return useMemo(() => {
     return {
       role,
       permissions,
       hasPermission,
-      isLoading,
-      isAuthenticated,
+      isLoading: status === 'loading',
+      isAuthenticated: status === 'authenticated',
 
-      // ─── Issue permissions ──────────────────────────────────────────────
+      // ─── Pre‑computed booleans (still using strings) ───────────────────
       canViewIssues: hasPermission('view:issue'),
       canCreateIssues: hasPermission('create:issue'),
       canEditAnyIssue: hasPermission('edit:any_issue'),
@@ -21,7 +30,6 @@ export const usePermissions = () => {
       canDeleteOwnIssue: hasPermission('delete:own_issue'),
       canViewAllIssues: hasPermission('view:all_issues'),
 
-      // ─── Comment permissions ────────────────────────────────────────────
       canCreateComments: hasPermission('create:comment'),
       canEditAnyComment: hasPermission('edit:any_comment'),
       canEditOwnComment: hasPermission('edit:own_comment'),
@@ -29,18 +37,15 @@ export const usePermissions = () => {
       canDeleteOwnComment: hasPermission('delete:own_comment'),
       canViewAllComments: hasPermission('view:all_comments'),
 
-      // ─── User management ────────────────────────────────────────────────
       canViewUsers: hasPermission('view:users'),
       canEditUserRole: hasPermission('edit:user_role'),
       canDeleteUser: hasPermission('delete:user'),
 
-      // ─── Manager requests ───────────────────────────────────────────────
       canViewManagerRequests: hasPermission('view:manager_requests'),
       canReviewManagerRequests: hasPermission('review:manager_requests'),
 
-      // ─── Panel access ──────────────────────────────────────────────────
       canAccessAdminPanel: hasPermission('access:admin_panel'),
       canAccessManagerPanel: hasPermission('access:manager_panel'),
     };
-  }, [role, permissions, hasPermission, isLoading, isAuthenticated]);
+  }, [permissions, role, status]);
 };

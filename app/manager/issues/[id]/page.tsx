@@ -5,6 +5,10 @@ import { useRouter, useParams } from "next/navigation";
 import { getAdminIssueById, updateAdminIssue, deleteAdminIssue, AdminIssue } from "../../../services/adminService";
 import { IssueStatus } from "../../../services/issuesService";
 
+// ─── Import comment components ────────────────────────────────────────────
+import { CommentList } from "../../../issues/[id]/comments/CommentList";
+import { CommentForm } from "../../../issues/[id]/comments/CommentForm";
+
 export default function ManagerIssueDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -15,6 +19,10 @@ export default function ManagerIssueDetailPage() {
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // ─── Comments state ─────────────────────────────────────────────────────
+  const [refreshComments, setRefreshComments] = useState(0);
+  const [showComments, setShowComments] = useState(false);
 
   // ─── Confirmation Dialog State ──────────────────────────────────────────
   const [showConfirm, setShowConfirm] = useState(false);
@@ -41,7 +49,6 @@ export default function ManagerIssueDetailPage() {
     if (!isNaN(id)) loadIssue();
   }, [id]);
 
-  // ─── Update handler ──────────────────────────────────────────────────────
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -56,12 +63,10 @@ export default function ManagerIssueDetailPage() {
     }
   };
 
-  // ─── Delete handler (opens confirmation) ────────────────────────────────
   const handleDelete = () => {
     setShowConfirm(true);
   };
 
-  // ─── Execute delete ──────────────────────────────────────────────────────
   const executeDelete = async () => {
     setShowConfirm(false);
     try {
@@ -70,6 +75,10 @@ export default function ManagerIssueDetailPage() {
     } catch (err) {
       alert("Failed to delete issue");
     }
+  };
+
+  const handleCommentPosted = () => {
+    setRefreshComments((prev) => prev + 1);
   };
 
   if (loading) {
@@ -82,6 +91,7 @@ export default function ManagerIssueDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
+      {/* Back button */}
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => router.push("/manager/issues")}
@@ -197,24 +207,25 @@ export default function ManagerIssueDetailPage() {
         </div>
       )}
 
-      {/* Comments */}
-      {issue.comments && issue.comments.length > 0 && (
-        <div className="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-800 mb-4">Comments ({issue.comments.length})</h3>
-          <div className="space-y-3">
-            {issue.comments.map((comment) => (
-              <div key={comment.id} className="border-b border-slate-100 pb-3 last:border-0">
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <span className="font-medium text-slate-700">{comment.user?.name || "Unknown"}</span>
-                  <span>•</span>
-                  <span>{new Date(comment.createdAT).toLocaleDateString()}</span>
-                </div>
-                <p className="text-sm text-slate-600 mt-1">{comment.text}</p>
-              </div>
-            ))}
-          </div>
+      {/* ─── Comments Section ────────────────────────────────────────────── */}
+      <div className="mt-10 pt-6 border-t border-slate-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-slate-800">Comments</h3>
+          <button
+            onClick={() => setShowComments((prev) => !prev)}
+            className="text-sm font-medium text-amber-600 hover:text-amber-800 transition-colors"
+          >
+            {showComments ? "Hide Comments" : "Show Comments"}
+          </button>
         </div>
-      )}
+
+        {showComments && (
+          <div>
+            <CommentList issueId={id} refreshTrigger={refreshComments} />
+            <CommentForm issueId={id} onCommentPosted={handleCommentPosted} />
+          </div>
+        )}
+      </div>
 
       {/* ─── Delete Confirmation Card ────────────────────────────────────── */}
       {showConfirm && (

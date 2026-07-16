@@ -1,47 +1,31 @@
-import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { fetchPermissions, UserPermissions, Permission, clearPermissionsCache } from '../services/permissionService';
 
 export const useRole = () => {
   const { data: session, status } = useSession();
-  const [permissions, setPermissions] = useState<UserPermissions | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const user = session?.user;
 
-  // Fetch permissions from backend
-  useEffect(() => {
-    if (status === 'authenticated' && session) {
-      fetchPermissions()
-        .then(setPermissions)
-        .catch(setError)
-        .finally(() => setLoading(false));
-    } else if (status === 'unauthenticated') {
-      setPermissions(null);
-      setLoading(false);
-      clearPermissionsCache();
-    }
-  }, [session, status]);
+  const role = user?.role || 'USER';
+  const permissions = user?.permissions || [];
 
-  // Derived booleans from permissions
-  const hasPermission = (permission: Permission): boolean => {
-    return permissions?.permissions?.includes(permission) ?? false;
+  const hasPermission = (permission: string): boolean => {
+    return permissions.includes(permission);
   };
 
   const isSuperAdmin = hasPermission('access:admin_panel');
   const isManager = hasPermission('access:manager_panel') && !isSuperAdmin;
-  const isAdmin = isSuperAdmin; // same as SUPERADMIN
+  const isAdmin = isSuperAdmin;
   const isUser = !isSuperAdmin && !isManager;
 
   return {
-    role: permissions?.role || null,
-    permissions: permissions?.permissions || [],
+    role,
+    permissions,
     status,
     isSuperAdmin,
     isManager,
     isAdmin,
     isUser,
-    isLoading: loading || status === 'loading',
+    isLoading: status === 'loading',
     isAuthenticated: status === 'authenticated',
-    hasPermission, 
+    hasPermission,
   };
 };

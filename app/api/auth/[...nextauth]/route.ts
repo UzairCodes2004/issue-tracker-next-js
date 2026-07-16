@@ -11,7 +11,9 @@ interface ExtendedUser extends User {
   name: string;
   email: string;
   role: string;
+  permissions: string[];
   accessToken: string;
+  registered?: string; // 👈 Added
 }
 
 interface ExtendedAccount extends Account {
@@ -22,7 +24,9 @@ interface ExtendedAccount extends Account {
 interface ExtendedJWT extends JWT {
   id?: string;
   role?: string;
+  permissions?: string[];
   accessToken?: string;
+  registered?: string; // 👈 Added
 }
 
 interface ExtendedSession extends Session {
@@ -31,7 +35,9 @@ interface ExtendedSession extends Session {
     name?: string | null;
     email?: string | null;
     role: string;
+    permissions: string[];
     accessToken: string;
+    registered?: string; // 👈 Added
   };
   accessToken?: string;
 }
@@ -75,13 +81,15 @@ const handler = NextAuth({
               name: data.userName,
               email: credentials.email,
               role: data.role || "USER",
+              permissions: data.permissions || [],
               accessToken: data.accessToken,
+              registered: "CREDENTIALS", //  Set for credentials
             } as ExtendedUser;
           }
           return null;
         } catch (error) {
           console.error("Auth error:", error);
-          return null; // ✅ Always return null on error
+          return null;
         }
       },
     }),
@@ -89,48 +97,51 @@ const handler = NextAuth({
 
   callbacks: {
     async signIn({ user, account }) {
-  if (account?.provider === "google") {
-    const googleAccount = account as ExtendedAccount;
+      if (account?.provider === "google") {
+        const googleAccount = account as ExtendedAccount;
 
-    if (!googleAccount.id_token) {
-      return false;
-    }
+        if (!googleAccount.id_token) {
+          return false;
+        }
 
-    try {
-      const { data } = await axios.post("http://localhost:5000/auth/google", {
-        idToken: googleAccount.id_token,
-      });
+        try {
+          const { data } = await axios.post("http://localhost:5000/auth/google", {
+            idToken: googleAccount.id_token,
+          });
 
-      const googleUser = user as ExtendedUser;
-      googleUser.id = data.userId.toString();
-      googleUser.name = data.userName;
-      googleUser.role = data.role || "USER";
-      googleUser.accessToken = data.accessToken;
-      googleUser.registered = "GOOGLE_OAUTH"; 
+          const googleUser = user as ExtendedUser;
+          googleUser.id = data.userId.toString();
+          googleUser.name = data.userName;
+          googleUser.role = data.role || "USER";
+          googleUser.permissions = data.permissions || [];
+          googleUser.accessToken = data.accessToken;
+          googleUser.registered = "GOOGLE_OAUTH"; //  Set for Google
 
-      googleAccount.accessToken = data.accessToken;
-      googleAccount.userId = data.userId.toString();
+          googleAccount.accessToken = data.accessToken;
+          googleAccount.userId = data.userId.toString();
 
+          return true;
+        } catch (error) {
+          console.error("Google sign-in error:", error);
+          return false;
+        }
+      }
       return true;
-    } catch (error) {
-      console.error("Google sign-in error:", error);
-      return false;
-    }
-  }
-  return true;
-},
+    },
 
     async jwt({ token, user, account, trigger, session }) {
       const typedToken = token as ExtendedJWT;
 
       if (account?.provider === "google") {
         const googleAccount = account as ExtendedAccount;
+        const googleUser = user as ExtendedUser;
         typedToken.accessToken = googleAccount.accessToken;
         typedToken.id = googleAccount.userId?.toString();
-        typedToken.name = user?.name;
-        typedToken.email = user?.email;
-        typedToken.role = (user as ExtendedUser)?.role || "USER";
-        typedToken.registered = (user as ExtendedUser)?.registered || "GOOGLE_OAUTH"; 
+        typedToken.name = googleUser?.name;
+        typedToken.email = googleUser?.email;
+        typedToken.role = googleUser?.role || "USER";
+        typedToken.permissions = googleUser?.permissions || [];
+        typedToken.registered = googleUser?.registered || "GOOGLE_OAUTH"; //  Store
         return typedToken as JWT;
       }
 
@@ -140,8 +151,9 @@ const handler = NextAuth({
         typedToken.name = credentialsUser.name;
         typedToken.email = credentialsUser.email;
         typedToken.role = credentialsUser.role || "USER";
+        typedToken.permissions = credentialsUser.permissions || [];
         typedToken.accessToken = credentialsUser.accessToken;
-        typedToken.registered = credentialsUser.registered || "CREDENTIALS";
+        typedToken.registered = credentialsUser.registered || "CREDENTIALS"; //  Store
         return typedToken as JWT;
       }
 
@@ -150,6 +162,8 @@ const handler = NextAuth({
         if (updatedSession.user?.name) typedToken.name = updatedSession.user.name;
         if (updatedSession.user?.email) typedToken.email = updatedSession.user.email;
         if (updatedSession.user?.role) typedToken.role = updatedSession.user.role;
+        if (updatedSession.user?.permissions) typedToken.permissions = updatedSession.user.permissions;
+        if (updatedSession.user?.registered) typedToken.registered = updatedSession.user.registered;
         return typedToken as JWT;
       }
 
@@ -165,7 +179,9 @@ const handler = NextAuth({
           ...session.user,
           id: typedToken.id || "",
           role: typedToken.role || "USER",
+          permissions: typedToken.permissions || [],
           accessToken: typedToken.accessToken || "",
+          registered: typedToken.registered || "CREDENTIALS", // 👈 Expose to session
         },
         accessToken: typedToken.accessToken,
       };
@@ -201,4 +217,3 @@ const handler = NextAuth({
 });
 
 export { handler as GET, handler as POST };
-

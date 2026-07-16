@@ -19,7 +19,9 @@ const NavBar = () => {
 
   // ─── Permission hooks ──────────────────────────────────────────────────
   const { canAccessAdminPanel, canAccessManagerPanel } = usePermissions();
-  const { isManager, isSuperAdmin, isUser } = useRole(); // 👈 Add isUser
+  const { isManager, isSuperAdmin, isUser } = useRole();
+
+  const isAuthenticated = status === "authenticated";
 
   // ─── HIDE on admin routes ──────────────────────────────────────────────
   if (pathname.startsWith("/admin") || pathname.startsWith("/manager")) {
@@ -27,19 +29,24 @@ const NavBar = () => {
   }
 
   // ─── Navigation links ──────────────────────────────────────────────────
-  const navLinks = [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/issues", label: "Issues" },
-  ];
+  const navLinks = [];
 
-  // ✅ Admin Panel – only SUPERADMIN
-  if (canAccessAdminPanel) {
-    navLinks.push({ href: "/admin", label: "Admin Panel" });
-  }
+  // Only show Dashboard and Issues when authenticated
+  if (isAuthenticated) {
+    navLinks.push(
+      { href: "/dashboard", label: "Dashboard" },
+      { href: "/issues", label: "Issues" }
+    );
 
-  // ✅ Manager Panel – only MANAGER (not SUPERADMIN)
-  if (isManager) {
-    navLinks.push({ href: "/manager", label: "Manager Panel" });
+    //  Admin Panel – only SUPERADMIN
+    if (canAccessAdminPanel) {
+      navLinks.push({ href: "/admin", label: "Admin Panel" });
+    }
+
+    //  Manager Panel – only MANAGER (not SUPERADMIN)
+    if (isManager) {
+      navLinks.push({ href: "/manager", label: "Manager Panel" });
+    }
   }
 
   return (
@@ -80,7 +87,7 @@ const NavBar = () => {
           <span className="text-sm text-gray-400 animate-pulse">Loading…</span>
         )}
 
-        {status === "authenticated" && session?.user && (
+        {isAuthenticated && session?.user && (
           <DropdownMenu.Root>
             <DropdownMenu.Trigger>
               <button className="flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 rounded-full">
@@ -103,7 +110,7 @@ const NavBar = () => {
                 </Link>
               </DropdownMenu.Item>
 
-              {/* ✅ Manager Request Status – only for regular USERs (not MANAGER or SUPERADMIN) */}
+              {/* ✅ Manager Request Status – only for regular USERs */}
               {isUser && (
                 <DropdownMenu.Item>
                   <Link href="/manager-request-status" className="py-1 w-full">
@@ -142,7 +149,7 @@ const NavBar = () => {
           </DropdownMenu.Root>
         )}
 
-        {status === "unauthenticated" && (
+        {!isAuthenticated && (
           <div className="hidden md:flex items-center gap-3">
             <Link
               href="/login"
@@ -194,7 +201,7 @@ const NavBar = () => {
                 </Link>
               </li>
             ))}
-            {status === "unauthenticated" && (
+            {!isAuthenticated && (
               <>
                 <li>
                   <Link
